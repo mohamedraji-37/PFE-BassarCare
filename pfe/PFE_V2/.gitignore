@@ -1,0 +1,11 @@
+# Ignore all .pth, .pt, pt5 files
+*.pth
+*.pt
+*.pt5
+*.sql
+# Ignore folders
+uploads/
+DRIVE_dataset/
+model_utils/
+images/
+

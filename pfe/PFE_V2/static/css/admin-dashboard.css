@@ -1,0 +1,1038 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+  background: #f5f6fa;
+  font-family: 'Segoe UI', sans-serif;
+}
+body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+body,
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox */
+}
+
+.admin-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  width: 250px;
+  background: #111c26;
+  color: white;
+  padding: 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  overflow-y: auto;
+  font-size: 15px;
+} 
+
+.admin-sidebar h2 {
+  color: #ecf0f1;
+  text-align: center;
+  margin-bottom: 40px;
+  margin-top: 15px;
+  font-size: 25px;
+}
+
+.admin-sidebar .nav-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.admin-sidebar .nav-link {
+  display: block;
+  color: #bdc3c7;
+  padding: 12px 20px;
+  text-decoration: none;
+  border-radius: 4px;
+  margin: 8px 0;
+  transition: background 0.3s, color 0.3s;
+}
+
+.admin-sidebar .nav-link:hover {
+  background: #34495e;
+  color: #ecf0f1;
+}
+
+.admin-sidebar .nav-link.active {
+  background: #00c17c;
+  color: white;
+}
+
+
+.logout-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: #c0392b;
+  color: white;
+  padding: 12px;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background 0.3s;
+}
+
+.logout-btn:hover {
+  background: #e74c3c;
+}
+
+.admin-main {
+  flex: 1;
+  margin-left: 250px;
+  padding: 30px;
+  min-height: 100vh;
+  background: white;
+}
+
+.dashboard-section {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.dashboard-section.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.section {
+  margin-bottom: 30px;
+  padding: 25px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+}
+
+.search-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+
+
+.model-list {
+  list-style: none;
+  padding: 0;
+}
+
+.model-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+}
+
+.delete-btn {
+  background: #e74c3c;
+  color: white;
+  padding: 8px 12px;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background 0.2s ease-in-out;
+}
+
+.delete-btn:hover {
+  background: #c0392b;
+}
+
+.edit-btn {
+    background: #3498db;
+    color: white;
+    padding: 8px 15px;
+    text-decoration: none;
+    border-radius: 4px;
+    margin-right: 5px;
+    transition: background 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+.edit-btn:hover {
+    background: #2980b9;
+}
+
+/* Modal Styles */
+.model-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0,0,0,0.4);
+
+  /* Center content using flex */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal[style*="display: block"] {
+  display: flex !important; /* Ensure flex centering when shown */
+}
+
+.modal-content {
+  background-color: #fefefe;
+  padding: 25px;
+  border: 1px solid #888;
+  width: 550px !important;
+  max-width: 90vw;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  position: relative;
+  margin: 0; /* Remove default margin */
+}
+
+.close-modal {
+  color: #aaa;
+  position: absolute;
+  right: 15px;
+  top: 10px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close-modal:hover {
+  color: #333;
+}
+
+/* Form groups in modal */
+.modal .form-group {
+  margin-bottom: 15px;
+}
+
+.modal .form-group label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.modal .form-group input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+
+.status-badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.status-badge.pending {
+    background-color: #ffc107;
+    color: #333;
+}
+
+.status-badge.approved {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-badge.rejected {
+    background-color: #dc3545;
+    color: white;
+}
+
+.user-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.approve-btn {
+    color: #28a745;
+    text-decoration: none;
+}
+
+.reject-btn {
+    color: #dc3545;
+    text-decoration: none;
+}
+
+
+/*********************************************************/
+/*********************************************************/
+/*********************************************************/
+/*********************************************************/
+/*********************************************************/
+/*********************************************************/
+/*********************************************************/
+/*********************************************************/
+/*********************************************************/
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  color: #1a202c;
+}
+
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+
+
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.header h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header p {
+  color: #718096;
+  font-size: 1.1rem;
+}
+
+/* Upload Section */
+.upload-section {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.upload-form {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap; /* allows wrapping on small screens */
+}
+
+.upload-form .form-group {
+  margin: 0;
+  flex: 1 1 220px; /* grow, shrink, min width */
+}
+
+
+.file-input-wrapper,
+.text-input {
+    height: 56px; /* or whatever looks best for your design */
+    min-height: 56px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #2d3748;
+}
+
+.file-input-wrapper {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  min-height: 56px;
+  background: linear-gradient(135deg, #f7fafc, #edf2f7);
+  border: 2px dashed #cbd5e0;
+  border-radius: 12px;
+  padding: 0rem 1rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.file-input-wrapper:hover {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #ebf8ff, #e6fffa);
+}
+
+.file-input {
+  position: absolute;
+  left: -9999px;
+  opacity: 0;
+}
+
+.file-input-label {
+  display: flex;
+  align-items: center;
+  color: #4a5568;
+  cursor: pointer;
+  font-weight: 500;
+  height: 100%;
+}
+
+.text-input {
+  padding: 0rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: white;
+  height: 56px;
+  min-height: 56px;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.upload-btn {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+  color: white;
+  border: none;
+  padding: 0 2rem;           /* Only horizontal padding */
+  height: 56px;              /* Match input height */
+  min-height: 56px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-sizing: border-box;    /* Ensure padding doesn't increase height */
+  line-height: 1; 
+  margin-top: 30px;           /* Prevent extra vertical space */
+}
+
+.upload-btn,
+.upload-form .upload-btn,
+.text-input,
+.file-input-wrapper {
+  height: 56px;
+  min-height: 56px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+
+.upload-btn,
+.upload-form .upload-btn {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+  color: white;
+  border: none;
+  padding: 0 2rem; /* Only horizontal padding */
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  gap: 0.5rem;
+}
+
+.upload-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
+}
+
+/* Models Section */
+.models-section {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.models-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.models-header h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.model-card {
+  background: linear-gradient(135deg, #f7fafc, #edf2f7);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.model-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #ffffff, #f7fafc);
+}
+
+.model-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.model-details h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #2d3748;
+}
+
+.model-meta {
+  color: #718096;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.model-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.action-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modify-btn {
+  background: linear-gradient(135deg, #4299e1, #3182ce);
+  color: white;
+}
+
+.modify-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(66, 153, 225, 0.4);
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, #f56565, #e53e3e);
+  color: white;
+}
+
+.delete-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(245, 101, 101, 0.4);
+}
+
+.search-bar {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1rem;
+  margin-bottom: 2rem;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.search-bar:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #718096;
+}
+
+.empty-state i {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 70px;
+  }
+
+  .sidebar .nav-link span {
+    display: none;
+  }
+
+  .upload-form {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+/* ============================================================
+   CORRECTIFS FINAUX D'AFFICHAGE (POST-VIEWPORT)
+   ============================================================ */
+@media (max-width: 768px) {
+    /* 1. On libère la Sidebar des styles inline du HTML */
+    .admin-sidebar {
+        width: 100% !important; /* Force la sidebar à prendre toute la largeur */
+        position: relative !important; /* Elle ne doit plus flotter par-dessus le contenu */
+        height: auto !important;
+        min-height: auto !important;
+        padding: 1rem 0 !important;
+        display: block !important; /* On l'affiche comme un bloc normal */
+    }
+
+    /* Ajustement du logo dans la sidebar */
+    .admin-sidebar .logo {
+        padding: 1rem !important;
+        margin-bottom: 1rem !important;
+        border-bottom: 1px solid #eee !important;
+    }
+
+    /* 2. On réinitialise le contenu principal */
+    .admin-main {
+        margin-left: 0 !important; /* Supprime l'espace prévu pour la sidebar PC */
+        width: 100% !important;
+        padding: 10px !important;
+        display: block !important;
+    }
+
+    /* 3. On force les sections à utiliser 100% de la largeur disponible */
+    .dashboard-sections, .dashboard-section, .header, .upload-section, .models-section {
+        width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding: 15px !important;
+        border-radius: 10px !important; /* Des coins un peu moins arrondis sur mobile */
+    }
+
+    /* 4. On empile les éléments du formulaire de recherche et d'upload */
+    .upload-form, .search-form {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    /* On s'assure que les inputs ne débordent pas */
+    .form-group, .text-input, .file-input-wrapper, .upload-btn, .search-bar {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 5px 0 !important;
+    }
+
+    /* 5. On ajuste les cartes de modèles/utilisateurs pour les petits écrans */
+    .model-info {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 15px !important;
+    }
+
+    .model-actions {
+        width: 100% !important;
+        justify-content: flex-start !important;
+        gap: 8px !important;
+    }
+
+    .action-btn {
+        flex: 1 !important;
+        padding: 10px 5px !important;
+        font-size: 13px !important;
+        justify-content: center !important;
+    }
+}
+/* --- FORCE RESPONSIVE FINAL --- */
+@media (max-width: 768px) {
+    /* 1. On "casse" le mode fixe de la sidebar pour qu'elle passe au-dessus */
+    .admin-sidebar {
+        position: relative !important; /* Elle ne flotte plus */
+        width: 100% !important;        /* Elle prend toute la largeur */
+        height: auto !important;
+        left: 0 !important;
+        padding: 1rem !important;
+        border-right: none !important;
+        border-bottom: 1px solid #e5e7eb !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+
+    /* 2. On ajuste la navigation pour qu'elle ne soit pas trop longue */
+    .admin-sidebar nav {
+        width: 100% !important;
+    }
+    
+    .nav-list {
+        display: flex !important;
+        flex-wrap: wrap !important; /* Met les boutons côte à côte si possible */
+        justify-content: center !important;
+        gap: 10px !important;
+    }
+
+    /* 3. LE PLUS IMPORTANT : On enlève la marge qui pousse le contenu vers la droite */
+    .admin-main {
+        margin-left: 0 !important; /* Supprime le décalage de 260px */
+        width: 100% !important;
+        padding: 10px !important;
+        display: block !important;
+    }
+
+    /* 4. On empile les formulaires (Recherche et Upload) */
+    .upload-form, .search-form {
+        flex-direction: column !important;
+        display: flex !important;
+    }
+
+    .form-group, .text-input, .file-input-wrapper, .upload-btn, .search-bar {
+        width: 100% !important;
+        margin: 5px 0 !important;
+    }
+
+    /* 5. On ajuste les cartes de modèles pour qu'elles rentrent dans l'écran */
+    .model-card {
+        padding: 1rem !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .model-info {
+        flex-direction: column !important; /* Empile Nom et Actions */
+        align-items: stretch !important;
+    }
+
+    .model-actions {
+        margin-top: 15px !important;
+        flex-direction: row !important; /* Garde les boutons Modifier/Suppr côte à côte */
+        justify-content: space-between !important;
+    }
+}
+/* ============================================================
+   FORÇAGE TOTAL : RÉPARATION FINALE MOBILE
+   ============================================================ */
+@media (max-width: 768px) {
+    /* 1. On transforme le conteneur flex en colonne */
+    .admin-container {
+        display: block !important; /* Casse le Flexbox qui met la sidebar à gauche */
+        width: 100% !important;
+    }
+
+    /* 2. On neutralise complètement la sidebar fixe */
+    .admin-sidebar {
+        position: relative !important; /* Elle ne flotte plus par-dessus le texte */
+        width: 100% !important;        /* Elle prend toute la largeur en haut */
+        height: auto !important;
+        min-height: auto !important;
+        left: 0 !important;
+        top: 0 !important;
+        padding: 1rem !important;
+        margin: 0 !important;
+        border-right: none !important;
+        border-bottom: 2px solid #667eea !important;
+        z-index: 1 !important;
+    }
+
+    /* 3. ON SUPPRIME LA MARGE GAUCHE (Le coupable principal) */
+    .admin-main {
+        margin-left: 0 !important;      /* Force le retour au bord gauche */
+        width: 100% !important;         /* Utilise tout l'écran */
+        padding: 10px !important;
+        display: block !important;
+        position: relative !important;
+    }
+
+    /* 4. On répare les boîtes (sections) qui débordent */
+    .dashboard-sections, 
+    .dashboard-section, 
+    .header, 
+    .upload-section, 
+    .models-section {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding: 15px !important;
+        box-shadow: none !important; /* Optionnel : simplifie le look sur petit écran */
+    }
+
+    /* 5. On empile les éléments des formulaires */
+    .upload-form {
+        flex-direction: column !important;
+        display: flex !important;
+    }
+
+    .form-group {
+        width: 100% !important;
+        margin-bottom: 15px !important;
+    }
+
+    /* Bouton plein écran */
+    .upload-btn {
+        width: 100% !important;
+        margin-top: 10px !important;
+        justify-content: center !important;
+    }
+}
+/* ============================================================
+   DESIGN MOBILE AMÉLIORÉ (UI/UX)
+   ============================================================ */
+@media (max-width: 768px) {
+    /* 1. Sidebar transformée en Header Moderne */
+    .admin-sidebar {
+        background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d) !important; /* Dégradé pour le PFE */
+        color: white !important;
+        padding: 15px 10px !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
+    }
+
+    .admin-sidebar h2 {
+        font-size: 20px !important;
+        margin-bottom: 15px !important;
+        color: white !important;
+    }
+
+    /* 2. Menu en grille d'icônes (plus propre sur mobile) */
+    .admin-sidebar .nav-list {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important; /* 3 colonnes */
+        gap: 10px !important;
+        padding: 0 !important;
+    }
+
+    .admin-sidebar .nav-item {
+        margin: 0 !important;
+    }
+
+    .admin-sidebar .nav-link {
+        flex-direction: column !important; /* Icône au-dessus du texte */
+        text-align: center !important;
+        font-size: 11px !important;
+        padding: 10px 5px !important;
+        border-radius: 8px !important;
+        background: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .admin-sidebar .nav-link i, 
+    .admin-sidebar .nav-link svg {
+        margin: 0 0 5px 0 !important;
+        font-size: 20px !important;
+    }
+
+    /* 3. Style des Sections et Cartes */
+    .dashboard-section {
+        background: white !important;
+        border-radius: 15px !important;
+        margin-bottom: 20px !important;
+        border: none !important;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05) !important;
+    }
+
+    .header h2 {
+        font-size: 1.2rem !important;
+        color: #2d3748 !important;
+        font-weight: 700 !important;
+    }
+
+    /* 4. Inputs et Boutons "Soft" */
+    .text-input, .file-input-wrapper {
+        border: 1.5px solid #edf2f7 !important;
+        border-radius: 12px !important;
+        background-color: #f8fafc !important;
+    }
+
+    .upload-btn {
+        background: #4a90e2 !important;
+        border-radius: 12px !important;
+        font-weight: bold !important;
+        letter-spacing: 0.5px !important;
+        text-transform: uppercase !important;
+        font-size: 13px !important;
+    }
+
+    /* 5. Cartes de modèles plus élégantes */
+    .model-card {
+        border: 1px solid #edf2f7 !important;
+        border-radius: 12px !important;
+        margin-bottom: 10px !important;
+        padding: 12px !important;
+    }
+
+    .model-info h3 {
+        font-size: 15px !important;
+        color: #2d3748 !important;
+    }
+
+    /* Actions en bas de carte */
+    .model-actions {
+        border-top: 1px solid #f1f5f9 !important;
+        padding-top: 10px !important;
+        margin-top: 10px !important;
+    }
+
+    .action-btn {
+        border-radius: 8px !important;
+        font-size: 12px !important;
+        height: 38px !important;
+    }
+}
+/* ============================================================
+   DESIGN MOBILE HARMONISÉ (MÊMES COULEURS QUE PC)
+   ============================================================ */
+@media (max-width: 768px) {
+    /* 1. Sidebar devient un Header discret (Blanc/Gris comme le PC) */
+    .admin-sidebar {
+        background: rgba(255, 255, 255, 0.98) !important;
+        border-bottom: 1px solid #e5e7eb !important;
+        padding: 10px !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
+    }
+
+    .admin-sidebar h2 {
+        font-size: 18px !important;
+        color: #1a202c !important; /* Couleur sombre du PC */
+        margin-bottom: 10px !important;
+    }
+
+    /* 2. Menu en ligne (Navigation horizontale discrète) */
+    .admin-sidebar .nav-list {
+        display: flex !important;
+        overflow-x: auto !important; /* Permet de défiler horizontalement si besoin */
+        white-space: nowrap !important;
+        gap: 8px !important;
+        padding-bottom: 5px !important;
+    }
+
+    .admin-sidebar .nav-item {
+        margin: 0 !important;
+    }
+
+    .admin-sidebar .nav-link {
+        background: #f7fafc !important; /* Gris très clair du PC */
+        color: #4a5568 !important;
+        border: 1px solid #edf2f7 !important;
+        padding: 8px 15px !important;
+        border-radius: 20px !important; /* Boutons arrondis style "pilule" */
+        font-size: 12px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .admin-sidebar .nav-link i, 
+    .admin-sidebar .nav-link svg {
+        margin-right: 5px !important;
+        font-size: 14px !important;
+    }
+
+    /* 3. Contenu principal (On retire les marges) */
+    .admin-main {
+        margin-left: 0 !important;
+        padding: 15px !important;
+        background: #f5f6fa !important; /* Fond gris bleuâtre du PC */
+    }
+
+    /* 4. Cartes de sections (Style épuré) */
+    .dashboard-section {
+        background: white !important;
+        border-radius: 12px !important;
+        border: 1px solid #e2e8f0 !important;
+        margin-bottom: 15px !important;
+        padding: 15px !important;
+    }
+
+    /* 5. Inputs et Boutons Bleus (Couleur PC) */
+    .text-input, .file-input-wrapper {
+        border-radius: 8px !important;
+        border: 1px solid #cbd5e0 !important;
+        height: 45px !important;
+    }
+
+    .upload-btn {
+        background: #3182ce !important; /* Bleu identique au PC */
+        color: white !important;
+        border-radius: 8px !important;
+        height: 45px !important;
+        font-size: 14px !important;
+        box-shadow: 0 4px 6px rgba(49, 130, 206, 0.2) !important;
+    }
+
+    /* 6. Liste des modèles (Cartes simplifiées) */
+    .model-card {
+        border-left: 4px solid #3182ce !important; /* Rappel du bleu */
+        margin-bottom: 10px !important;
+        padding: 12px !important;
+    }
+
+    .action-btn {
+        height: 35px !important;
+        font-size: 12px !important;
+        border-radius: 6px !important;
+    }
+}
+/* ============================================================
+   STYLE DE L'ONGLET ACTIF SUR MOBILE
+   ============================================================ */
+@media (max-width: 768px) {
+    /* Style pour le lien qui a la classe 'active' */
+    .admin-sidebar .nav-link.active {
+        background-color: #2ecc71 !important; /* Le vert de ton application */
+        color: white !important;              /* Texte en blanc pour le contraste */
+        border-color: #27ae60 !important;     /* Bordure un peu plus foncée */
+        font-weight: bold !important;
+        box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3) !important;
+    }
+
+    /* On s'assure que l'icône dans l'onglet actif passe aussi en blanc */
+    .admin-sidebar .nav-link.active i,
+    .admin-sidebar .nav-link.active svg {
+        color: white !important;
+    }
+}

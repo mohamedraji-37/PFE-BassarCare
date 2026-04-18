@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ _('Tableau de bord - BassarCare') }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/user-dashboard.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Vue principale -->
+        <div class="processing-view">
+            <div class="sidebar">
+                <img src="{{ url_for('static', filename='assets/new_logo_black.png') }}" alt="{{ _('BassarCare Logo') }}">
+                <div class="sidebar-divider"></div>
+                <div class="sidebar-options">
+                    <button class="sidebar-btn active" data-type="classification" onclick="switchMode('classification')">
+                      {{ _('Classification') }}
+                        <img src="{{ url_for('static', filename='assets/icon_classification.png') }}" alt="{{ _('Classification') }}" class="sidebar-icon">
+                    </button>
+                    <button class="sidebar-btn" data-type="segmentation" onclick="switchMode('segmentation')">
+                      {{ _('Segmentation') }}
+                        <img src="{{ url_for('static', filename='assets/icon_segmentation.png') }}" alt="{{ _('Segmentation') }}" class="sidebar-icon">
+                    </button>
+                    <div class="profile-container">
+                        <div class="profile-btn" onclick="window.location.href='/user/profile'">
+                            <div class="profile-pic">👤</div> <!-- Placeholder icon -->
+                            <div class="profile-info">
+                                <span>{{ full_name }}</span>
+                                <small>{{ _('Voir profil') }}</small>
+                            </div>
+                        </div>
+                        <button class="logout-btn" onclick="window.location.href='/logout'">
+                            {{ _('Déconnexion') }}
+                            <img src="{{ url_for('static', filename='assets/icon_logout.png') }}" alt="{{ _('Déconnexion') }}" class="logout-icon">
+                        </button>
+                    </div>
+                </div>
+            </div> 
+        
+            <div class="main-content">
+                <div class="step-progress">
+                    <div class="step" id="step1">
+                        <span class="step-number">1</span>
+                        <span class="step-label">{{ _('Sélectionner le modèle') }}</span>
+                    </div>
+                    <div class="arrow">➔</div>
+                    <div class="step" id="step2">
+                        <span class="step-number">2</span>
+                        <span class="step-label">{{ _('Uploader l\'image') }}</span>
+                    </div>
+                    <div class="arrow">➔</div>
+                    <div class="step" id="step3">
+                        <span class="step-number">3</span>
+                        <span class="step-label">{{ _('Traiter') }}</span>
+                    </div>
+                </div>
+
+            
+                <div class="model-selection-wrapper">
+                    <h3 class="section-title">{{ _('Sélectionner un modèle') }}</h3>
+                
+                    <div class="model-selection">
+                        <select id="modelSelect" class="model-dropdown">
+                            <option value="">{{ _('Sélectionner un modèle') }}</option>
+                            {% for model in models %}
+                            {% if model.model_type == 'segmentation' %}
+                            <option value="{{ model.id }}" data-type="segmentation">{{ model.model_name }}</option>
+                            {% elif model.model_type == 'classification' %}
+                            <option value="{{ model.id }}" data-type="classification">{{ model.model_name }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                        <button id="uploadModelBtn" class="model-upload-btn" title="{{ _('Téléverser un modèle personnalisé') }}">
+                           {{ _('Téléverser un nouveau modèle') }}
+                        </button>
+                        <input type="file" id="modelUpload" accept=".pth,.h5,.onnx" hidden>
+                    </div>
+                </div>
+
+        
+                <div class="upload-section">
+                    <div class="upload-grid">
+                        <!-- Zone 1 : Image rétinienne -->
+                        <div class="upload-box">
+                            <h5 class="upload-title">🖼️ {{ _('Image Rétinienne') }}</h5>
+                            <div class="image-upload-box" id="dropZone" onclick="document.getElementById('imageInput').click()">
+                                <input type="file" id="imageInput" accept="image/*" hidden>
+                                <img src="{{ url_for('static', filename='assets/upload.png') }}" alt="{{ _('Upload') }}" class="upload-icon">
+                                <p>{{ _('Glisser-déposer ou cliquer pour télécharger une image') }}</p>
+                                <p id="imageStatus" class="upload-status hidden">✓ {{ _('Glisser-déposer ou cliquer pour télécharger une image') }}</p>
+                            </div>
+                        </div>
+                    
+                        <!-- Zone 2 : Vérité terrain -->
+                        <div id="gtUploadSection" class="upload-box">
+                            <h5 class="upload-title">🧪 {{ _('Vérité terrain (optionnel)') }}</h5>
+                            <div class="image-upload-box" id="gtDropZone" onclick="document.getElementById('gtInput').click()">
+                                <input type="file" id="gtInput" accept="image/*" hidden>
+                                <img src="{{ url_for('static', filename='assets/upload.png') }}" alt="{{ _('Upload') }}" class="upload-icon">
+                                <p>{{ _('Glisser-déposer ou cliquer pour le masque vérité') }}</p>
+                                <p id="gtStatus" class="upload-status hidden">✓ {{ _('Masque sélectionné') }}</p>
+                            </div>
+                        </div>
+                    </div>
+        
+                    <button class="process-btn" id="processBtn" disabled>
+                        <span class="btn-text">{{ _('Traiter l\'image') }}</span>
+                    </button>
+                </div>
+        
+                <div class="results-section" id="resultsSection" style="display: none;">
+                    <div class="result-container">
+                        <h3>{{ _('Image originale') }}</h3>
+                        <img id="originalResult"
+                            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+                            alt="{{ _('Original') }}" class="result-image">
+                    </div>
+                    <div class="result-container" id="segmentationResult" style="display: none;">
+                        <h3>{{ _('Résultat de segmentation') }}</h3>
+                        <img id="processedResult"
+                            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+                            alt="{{ _('Traité') }}" class="result-image">                        
+                    </div>
+                    <div class="result-container" id="classificationResult">
+                        <h3>{{ _('Résultat de classification') }}</h3>
+                        <div class="classification-details">
+                            <div class="alert alert-info">
+                                <strong>{{ _('Classe prédite:') }}</strong> <span id="predictedClass">-</span><br>
+                                <strong>{{ _('Confiance:') }}</strong> <span id="confidence">-</span>
+                            </div>
+                            <div class="probability-bars">
+                                <div class="progress mb-2">
+                                    <div class="progress-bar bg-success" id="healthyBar" style="width: 0%">{{ _('Sain:') }} 0%</div>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-danger" id="unhealthyBar" style="width: 0%">{{ _('Pathologique:') }} 0%
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="viewReportBtn" class="btn btn-secondary mt-3">  {{ _('Voir le rapport complet') }}</button>
+                            <button id="downloadResultsBtn" class="btn btn-primary mt-3">  {{ _('Exporter le PDF') }}</button>
+                        </div>
+                    </div>
+                </div>
+        
+                <!-- Section métriques - visible seulement en mode segmentation -->
+                <div class="metrics-section" id="metricsSection" style="display: none;">
+                    <div class="metrics-container">
+                        <h3>{{ _('Métriques d\'entrée') }}</h3>
+                        <div class="metric-item">
+                            <span class="metric-label">{{ _('Dimensions:') }}</span>
+                            <span class="metric-value" id="inputDimensions">-</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">{{ _('Taille fichier:') }}</span>
+                            <span class="metric-value" id="inputSize">-</span>
+                        </div>
+                    </div>
+        
+                    <!-- métriques de sortie -->
+                    <div class="metrics-container">
+                        <h3>{{ _('Métriques de sortie') }}</h3>
+                        <div class="metric-grid">
+                            <div class="metric-item">
+                                <span class="metric-label">{{ _('IoU:') }}</span>
+                                <span class="metric-value" id="iou">-</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">{{ _('Dice:') }}</span>
+                                <span class="metric-value" id="dice">-</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">{{ _('Précision:') }}</span>
+                                <span class="metric-value" id="precision">-</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">{{ _('Rappel:') }}</span>
+                                <span class="metric-value" id="recall">-</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">{{ _('Exactitude:') }}</span>
+                                <span class="metric-value" id="accuracy">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button id="downloadSegmentationBtn" class="btn btn-primary mt-3" style="display: none;">{{ _('Exporter le rapport') }}</button>
+            </div>
+        </div>
+
+        <!-- Conteneur d'erreur -->
+        <div id="errorContainer" class="alert alert-danger" style="display: none;"></div>
+    </div>
+
+    <!-- Modal pour afficher le rapport complet -->
+    <div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ _('Rapport complet d\'analyse') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Close') }}"></button>
+                </div>
+                <div class="modal-body">
+                    <pre id="reportContent"></pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Fermer') }}</button>
+                    <button type="button" class="btn btn-primary" id="downloadReportBtn">{{ _('Télécharger') }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('uploadModelBtn').addEventListener('click', function () {
+            document.getElementById('modelUpload').click();
+        });
+    </script>
+
+    <script>
+        window.currentUser = {
+            fullName: "{{ full_name|e }}",
+            cin: "{{ user_cin|e }}"
+        };
+    </script>
+
+    <script>
+        function updateStepProgress(processed = false) {
+            const modelSelected = document.getElementById('modelSelect').value !== '';
+            const fileSelected = selectedFile !== null;
+
+            // Step 1: Model
+            document.getElementById('step1').classList.toggle('active', modelSelected);
+
+            // Step 2: Image
+            document.getElementById('step2').classList.toggle('active', modelSelected && fileSelected);
+
+            // Step 3: Only active after processing
+            document.getElementById('step3').classList.toggle('active', processed === true);
+        }
+        // Initialisation de jsPDF
+        const { jsPDF } = window.jspdf;
+        
+        let currentMode = 'classification';
+        let reportData = '';
+        let selectedFile = null;
+        let segmentationData = null;
+        
+        // Activer/désactiver le bouton de traitement
+        function updateProcessButton() {
+            const modelSelected = document.getElementById('modelSelect').value !== '';
+            const fileSelected = selectedFile !== null;
+            document.getElementById('processBtn').disabled = !(modelSelected && fileSelected);
+        }
+        
+        function switchMode(mode) {
+            currentMode = mode;
+            history.pushState(null, null, `?mode=${mode}`);
+            document.querySelectorAll('.sidebar-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.type === mode);
+            });
+
+            // Filtrer les modèles dans la liste déroulante
+            const modelSelect = document.getElementById('modelSelect');
+            Array.from(modelSelect.options).forEach(option => {
+                if (option.value === "") return;
+                const show = option.dataset.type === mode;
+                option.style.display = show ? '' : 'none';
+            });
+            modelSelect.value = "";
+            updateProcessButton();
+
+            //toggle ground truth visibility
+            const gtSection = document.getElementById('gtUploadSection');
+            if (gtSection) {
+                gtSection.style.display = mode === 'segmentation' ? 'block' : 'none';
+            }
+
+            // Hide results and metrics when switching mode
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('metricsSection').style.display = 'none';
+
+            // Afficher le bon type de résultat
+            document.getElementById('segmentationResult').style.display = 
+                mode === 'segmentation' ? 'block' : 'none';
+            document.getElementById('classificationResult').style.display = 
+                mode === 'classification' ? 'block' : 'none';
+            
+            // REMOVE THIS LINE:
+            // document.getElementById('metricsSection').style.display = 
+            //    mode === 'segmentation' ? 'block' : 'none';
+            
+            
+            // Afficher le bouton PDF en mode segmentation
+            document.getElementById('downloadSegmentationBtn').style.display = 'none';
+            
+            // Réinitialiser les résultats
+            document.getElementById('processedResult').src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+            document.getElementById('predictedClass').textContent = "-";
+            document.getElementById('confidence').textContent = "-";
+            document.getElementById('healthyBar').style.width = "0%";
+            document.getElementById('healthyBar').textContent = "{{ _('Sain:') }} 0%";
+            document.getElementById('unhealthyBar').style.width = "0%";
+            document.getElementById('unhealthyBar').textContent = "{{ _('Pathologique:') }} 0%";
+            
+            // Réinitialiser les métriques
+            document.getElementById('iou').textContent = "-";
+            document.getElementById('dice').textContent = "-";
+            document.getElementById('precision').textContent = "-";
+            document.getElementById('recall').textContent = "-";
+            document.getElementById('accuracy').textContent = "-";
+        }
+
+        // Gestion du drag and drop
+        const dropZone = document.getElementById('dropZone');
+        const imageInput = document.getElementById('imageInput');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                imageInput.files = e.dataTransfer.files;
+                selectedFile = e.dataTransfer.files[0];
+                previewImage(selectedFile);
+                updateProcessButton();
+                updateStepProgress();
+                document.getElementById('imageStatus').classList.remove('hidden');
+            }
+        });
+
+        imageInput.addEventListener('change', () => {
+            if (imageInput.files.length) {
+                selectedFile = imageInput.files[0];
+                previewImage(selectedFile);
+                updateProcessButton();
+                updateStepProgress();
+                document.getElementById('imageStatus').classList.remove('hidden');
+            }
+        });
+
+        document.getElementById('modelSelect').addEventListener('change', function() {
+            updateProcessButton();
+            updateStepProgress();
+        });
+
+        function previewImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('originalResult').src = e.target.result;
+                
+                // Mettre à jour les métriques d'entrée
+                const img = new Image();
+                img.onload = function() {
+                    document.getElementById('inputDimensions').textContent = 
+                        `${this.width} × ${this.height} {{ _('pixels') }}`;
+                };
+                img.src = e.target.result;
+                
+                document.getElementById('inputSize').textContent = 
+                    (file.size / 1024).toFixed(2) + ' KB';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Gestion du traitement
+        document.getElementById('processBtn').addEventListener('click', processImage);
+
+        function processImage() {
+            const modelId = document.getElementById('modelSelect').value;
+            
+            if (!modelId) {
+                showError("{{ _('Veuillez sélectionner un modèle') }}");
+                return;
+            }
+            
+            if (!selectedFile) {
+                showError("{{ _('Veuillez sélectionner une image') }}");
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+            formData.append('model_id', modelId);
+            
+            // Ajouter la vérité terrain si en mode segmentation
+            if (currentMode === 'segmentation') {
+                const gtInput = document.getElementById('gtInput');
+                if (gtInput.files.length) {
+                    formData.append('ground_truth', gtInput.files[0]);
+                }
+            }
+            
+            // Afficher un indicateur de chargement
+            const processBtn = document.getElementById('processBtn');
+            processBtn.disabled = true;
+            processBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{ _("Traitement...") }}';
+            
+            const endpoint = currentMode === 'segmentation' 
+                ? '/process-image' 
+                : '/classify-image';
+            
+            fetch(endpoint, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || `{{ _('Erreur serveur:') }} ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Show results and metrics sections
+                document.getElementById('resultsSection').style.display = 'grid';
+                if (currentMode === 'segmentation') {
+                    document.getElementById('metricsSection').style.display = 'grid';
+                    document.getElementById('segmentationResult').style.display = 'block';
+                    document.getElementById('classificationResult').style.display = 'none';
+                } else {
+                    document.getElementById('metricsSection').style.display = 'none';
+                    document.getElementById('segmentationResult').style.display = 'none';
+                    document.getElementById('classificationResult').style.display = 'block';
+                }
+
+                if (currentMode === 'segmentation') {
+                    // Traitement des résultats de segmentation
+                    document.getElementById('processedResult').src = data.processed + '?' + new Date().getTime();
+                    segmentationData = data;
+                    
+                    // Mettre à jour les métriques
+                    if (data.metrics) {
+                        document.getElementById('iou').textContent = data.metrics.iou ? (data.metrics.iou * 100).toFixed(2) + '%' : '-';
+                        document.getElementById('dice').textContent = data.metrics.dice ? (data.metrics.dice * 100).toFixed(2) + '%' : '-';
+                        document.getElementById('precision').textContent = data.metrics.precision ? (data.metrics.precision * 100).toFixed(2) + '%' : '-';
+                        document.getElementById('recall').textContent = data.metrics.recall ? (data.metrics.recall * 100).toFixed(2) + '%' : '-';
+                        document.getElementById('accuracy').textContent = data.metrics.accuracy ? (data.metrics.accuracy * 100).toFixed(2) + '%' : '-';
+                    }
+                    
+                    // Afficher le bouton d'export pour la segmentation
+                    document.getElementById('downloadSegmentationBtn').style.display = 'inline-block';
+                    updateStepProgress(true);
+                } else {
+                    // Traitement des résultats de classification
+                    try {
+                        // Vérification des données reçues
+                        if (!data || !data.predicted_class || typeof data.confidence === 'undefined') {
+                            throw new Error('{{ _("Données de classification incomplètes") }}');
+                        }
+
+                        // Mise à jour de l'interface
+                        document.getElementById('predictedClass').textContent = data.predicted_class;
+                        document.getElementById('confidence').textContent = data.confidence.toFixed(1) + '%';
+
+                        // Gestion des probabilités avec valeurs par défaut si manquantes
+                        const healthyProb = data.probabilities?.Sain || 0;
+                        const unhealthyProb = data.probabilities?.Pathologique || 0;
+
+                        // Mise à jour des barres de progression
+                        const healthyBar = document.getElementById('healthyBar');
+                        const unhealthyBar = document.getElementById('unhealthyBar');
+                        
+                        healthyBar.style.width = healthyProb + '%';
+                        healthyBar.textContent = "{{ _('Sain:') }} " + healthyProb.toFixed(1) + '%';
+                        
+                        unhealthyBar.style.width = unhealthyProb + '%';
+                        unhealthyBar.textContent = "{{ _('Pathologique:') }} " + unhealthyProb.toFixed(1) + '%';
+
+                        // Stockage du rapport pour affichage ultérieur
+                        reportData = data.report || "{{ _('Aucun rapport disponible') }}";
+                        
+                        // Afficher le bouton PDF
+                        document.getElementById('downloadResultsBtn').style.display = 'inline-block';
+                        window.classificationResults = {
+                            ...data,
+                            user_name: window.currentUser.fullName,
+                            patient_id: window.currentUser.cin
+                        };
+                        updateStepProgress(true);
+                    } catch (error) {
+                        console.error('{{ _("Erreur lors du traitement des résultats:") }}', error);
+                        throw new Error('{{ _("Erreur dans le format des données de classification") }}');
+                    }
+                }
+            })
+            .catch(error => {
+                showError('{{ _("Erreur:") }} ' + error.message);
+                console.error('{{ _("Détails de l erreur:") }}', error);
+            })
+            .finally(() => {
+                processBtn.disabled = false;
+                processBtn.innerHTML = '<span class="btn-text">{{ _("Traiter l image") }}</span>';
+            });
+        }
+
+        // Gérer l'affichage du rapport
+        document.getElementById('viewReportBtn').addEventListener('click', () => {
+            if (window.classificationResults) {
+                const cr = window.classificationResults;
+                let report = '';
+                report += `{{ _('Identifiant du patient:') }} ${cr.patient_id || "{{ _('Non spécifié') }}"}\n`;
+                report += `{{ _('Utilisateur:') }} ${cr.user_name || "{{ _('Non spécifié') }}"}\n`;
+                report += `\n---\n`;
+                report += cr.report || "{{ _('Aucun rapport disponible') }}";
+
+                document.getElementById('reportContent').textContent = report;
+                const reportModal = new bootstrap.Modal(document.getElementById('reportModal'));
+                reportModal.show();
+            } else if (reportData) {
+                document.getElementById('reportContent').textContent = reportData;
+                const reportModal = new bootstrap.Modal(document.getElementById('reportModal'));
+                reportModal.show();
+            } else {
+                showError("{{ _('Aucun rapport disponible') }}");
+            }
+        });
+
+        
+
+        // Téléchargement du rapport (MODIFIER pour PDF)
+        document.getElementById('downloadReportBtn').addEventListener('click', async function() {
+    if (!window.classificationResults) {
+        alert("{{ _('Aucun résultat de classification disponible.') }}");
+        return;
+    }
+    const imageUrl = document.getElementById('originalResult').src;
+    let image_data = null;
+    if (imageUrl.startsWith('data:')) {
+        image_data = imageUrl;
+    }
+    const cr = window.classificationResults;
+    const classification_results = {
+        predicted_class_name: cr.predicted_class || cr.predicted_class_name,
+        confidence: (typeof cr.confidence === 'number') ? cr.confidence / 100 : cr.confidence,
+        prob_normal: cr.probabilities?.Normal !== undefined ? cr.probabilities.Normal / 100 : cr.prob_normal,
+        prob_glaucoma: cr.probabilities?.Glaucome !== undefined ? cr.probabilities.Glaucome / 100 : cr.prob_glaucoma
+    };
+    const btn = document.getElementById('downloadReportBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{ _("Génération du PDF...") }}';
+    btn.disabled = true;
+    const originalFileName = selectedFile ? selectedFile.name : "{{ _('Image transmise') }}";
+    try {
+        const response = await fetch('/download-classification-pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                classification_results,
+                image_data: image_data,
+                filename: originalFileName
+            })
+        });
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'rapport_classification.pdf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        } else {
+            alert("{{ _('Erreur lors du téléchargement du PDF') }}");
+        }
+    } catch (error) {
+        alert("{{ _('Erreur lors du téléchargement du PDF') }}: " + error.message);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+});
+
+        // Téléchargement des résultats au format PDF (classification)
+        document.getElementById('downloadResultsBtn').addEventListener('click', async function() {
+    if (!window.classificationResults) {
+        alert("{{ _('Aucun résultat de classification disponible.') }}");
+        return;
+    }
+    const imageUrl = document.getElementById('originalResult').src;
+    // Instead of sending a relative URL, send the data URL if it starts with "data:"
+    let image_data = null;
+    if (imageUrl.startsWith('data:')) {
+        image_data = imageUrl;
+    }
+
+    // Map frontend keys to backend expected keys
+    const cr = window.classificationResults;
+    const classification_results = {
+        predicted_class_name: cr.predicted_class || cr.predicted_class_name,
+        confidence: (typeof cr.confidence === 'number') ? cr.confidence / 100 : cr.confidence, // convert % to [0,1]
+        prob_normal: cr.probabilities?.Normal !== undefined ? cr.probabilities.Normal / 100 : cr.prob_normal,
+        prob_glaucoma: cr.probabilities?.Glaucome !== undefined ? cr.probabilities.Glaucome / 100 : cr.prob_glaucoma
+    };
+
+    const btn = document.getElementById('downloadResultsBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{ _("Génération du PDF...") }}';
+    btn.disabled = true;
+    
+    const originalFileName = selectedFile ? selectedFile.name : "{{ _('Image transmise') }}";
+    try {
+        const response = await fetch('/download-classification-pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                classification_results,
+                image_data: image_data,
+                filename: originalFileName 
+                // image_url: relativeImageUrl, // (optional: keep for fallback)
+            })
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'rapport_classification.pdf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        } else {
+            alert("{{ _('Erreur lors du téléchargement du PDF') }}");
+        }
+    } catch (error) {
+        alert("{{ _('Erreur lors du téléchargement du PDF') }}: " + error.message);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+});
+
+        // Téléchargement des résultats au format PDF (segmentation)
+        document.getElementById('downloadSegmentationBtn').addEventListener('click', generateSegmentationPDF);
+
+        /*async function generateClassificationPDF() {
+            const btn = document.getElementById('downloadResultsBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Génération du PDF...';
+            btn.disabled = true;
+            
+            try {
+                // Créer un nouveau document PDF en format paysage
+                const doc = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm'
+                });
+                
+                // Ajouter un titre
+                doc.setFontSize(18);
+                doc.text('Rapport d\'analyse - Classification AI', 105, 15, { align: 'center' });
+                
+                // Ajouter la date
+                doc.setFontSize(10);
+                const now = new Date();
+                doc.text(`Généré le: ${now.toLocaleDateString()} à ${now.toLocaleTimeString()}`, 105, 22, { align: 'center' });
+                
+                // Ajouter les informations sur le modèle
+                doc.setFontSize(12);
+                const modelSelect = document.getElementById('modelSelect');
+                const selectedModel = modelSelect.options[modelSelect.selectedIndex].text;
+                doc.text(`Modèle utilisé: ${selectedModel} (Classification)`, 15, 30);
+                
+                // Capture des résultats avec html2canvas
+                const resultsSection = document.getElementById('resultsSection');
+                
+                const canvas = await html2canvas(resultsSection, {
+                    scale: 2,
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: true
+                });
+                
+                // Ajouter l'image au PDF
+                const imgData = canvas.toDataURL('image/jpeg', 0.8);
+                
+                // Calculer les dimensions pour s'adapter au PDF
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const pageHeight = doc.internal.pageSize.getHeight();
+                
+                // Ajouter l'image (résultats)
+                const imgProps = doc.getImageProperties(imgData);
+                const ratio = imgProps.width / imgProps.height;
+                const width = pageWidth - 20;
+                const height = width / ratio;
+                doc.addImage(imgData, 'JPEG', 10, 40, width, height);
+                
+                // Ajouter le rapport si disponible
+                if (reportData && reportData.length > 0) {
+                    doc.addPage();
+                    doc.setFontSize(14);
+                    doc.text('Rapport complet d\'analyse', 15, 20);
+                    doc.setFontSize(10);
+                    
+                    // Diviser le texte en lignes qui tiennent dans la page
+                    const splitText = doc.splitTextToSize(reportData, pageWidth - 30);
+                    doc.text(splitText, 15, 30);
+                }
+                
+                // Sauvegarder le PDF
+                doc.save(`rapport_classification_${now.toISOString().slice(0,10)}.pdf`);
+                
+            } catch (error) {
+                console.error('Erreur lors de la génération du PDF:', error);
+                showError('Erreur lors de la génération du PDF: ' + error.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }*/
+
+        async function generateSegmentationPDF() {
+    const btn = document.getElementById('downloadSegmentationBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{ _("Génération du PDF...") }}';
+    btn.disabled = true;
+
+    // Helper to convert image URL to data URL if needed
+    async function toDataURL(src) {
+        if (src.startsWith('data:')) return src;
+        // Fetch the image as blob and convert to base64
+        const response = await fetch(src);
+        const blob = await response.blob();
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    try {
+        // Get images as data URLs
+        const originalImgSrc = document.getElementById('originalResult').src;
+        const resultImgSrc = document.getElementById('processedResult').src;
+        const originalImg = await toDataURL(originalImgSrc);
+        const resultImg = await toDataURL(resultImgSrc);
+
+        // Collect metrics
+        const metrics = {
+                 
+    dimensions: document.getElementById('inputDimensions').textContent,
+    file_size: document.getElementById('inputSize').textContent,
+    iou: document.getElementById('iou').textContent,
+    dice: document.getElementById('dice').textContent,
+    precision: document.getElementById('precision').textContent,
+    recall: document.getElementById('recall').textContent,
+    accuracy: document.getElementById('accuracy').textContent
+
+        };
+
+        const response = await fetch('/download-segmentation-pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                original_image: originalImg,
+                result_image: resultImg,
+                metrics: metrics
+            })
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'rapport_segmentation.pdf';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        } else {
+            alert("{{ _('Erreur lors du téléchargement du PDF') }}");
+        }
+    } catch (error) {
+        alert("{{ _('Erreur lors du téléchargement du PDF') }}: " + error.message);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+        
+        function showError(message) {
+            const errorContainer = document.getElementById('errorContainer');
+            errorContainer.textContent = message;
+            errorContainer.style.display = 'block';
+            setTimeout(() => {
+                errorContainer.style.display = 'none';
+            }, 5000);
+        }
+
+        // Initialisation
+        switchMode('classification');
+    </script>
+</body>
+</html>
