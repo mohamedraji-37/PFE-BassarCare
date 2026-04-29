@@ -14,11 +14,10 @@ html {
 body::-webkit-scrollbar {
   display: none; 
 }
-
 header {
-  position: fixed;
+  position: relative;
   z-index: 10;
-  top: 15px;
+  top: 0;
   left: 0;
   width: 100%;
   background: transparent;
@@ -456,6 +455,8 @@ header {
     .text-content, .image-content {
       width: 100%;
     }
+
+
   }
 
 
@@ -758,71 +759,161 @@ header {
   color: #67e8f9;
 }
 /*A*/
+/* Hamburger caché sur desktop */
+.hamburger {
+  display: none;
+}
 /* =========================
    Responsive mobile - home
    À ajouter à la fin
 ========================= */
 @media (max-width: 768px) {
+  
+  .lang-menu {
+  right: auto;
+  left: 0;
+}
   header {
     top: 0;
   }
 
   .navbar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0;
+    right: 0;
     height: auto;
     flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    padding: 4px 12px 10px;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+    padding: 4px 10px 4px;
+    background-color: rgba(0, 0, 0, 0.8);
+    will-change: transform;
+    transition: none !important;
   }
 
+  /* Logo centré sur sa propre ligne */
   .logo {
     width: 100%;
     display: flex;
     justify-content: center;
-    margin-top: -6px;
+    align-items: center;
+    margin-top: 0;
+    margin-bottom: 2px;
+    position: static;
+    transform: none;
   }
 
   .logo img {
-    height: 122px;
-    margin-top: -8px;
+    height: 150px;
+    margin-top: 0;
   }
 
-  .nav-links {
-    width: 100%;
+  /* Hamburger à gauche sur la 2e ligne */
+  .hamburger {
+    display: flex;
+    flex-direction: column;
     justify-content: center;
-    flex-wrap: wrap;
-    gap: 12px 18px;
-    padding: 0;
+    gap: 5px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px;
+    flex-shrink: 0;
+    z-index: 1100;
   }
 
-  .nav-links li a {
-    font-size: 13px;
+  .hamburger span {
+    display: block;
+    width: 28px;
+    height: 2.5px;
+    background-color: white;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+  }
+
+  /* Hamburger open state → croix X */
+  .hamburger.open span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+  .hamburger.open span:nth-child(2) {
+    opacity: 0;
+  }
+  .hamburger.open span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+
+  /* Menu déroulant mobile */
+  .nav-links {
+    display: none;
+    position: fixed;
+    top: 90px;
+    left: 0;
+    right: 0;
+    background-color: rgba(0, 0, 0, 0.95);
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: 10px 0;
+    z-index: 999;
+    width: 100%;
+  }
+
+  .nav-links.open {
+    display: flex;
+  }
+
+  .nav-links li {
+    width: 100%;
     text-align: center;
   }
 
-  .nav-button {
-    width: 100%;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-right: 0;
+  .nav-links li a {
+    display: block;
+    padding: 14px 20px;
+    font-size: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
   }
 
+  /* Langue + boutons à droite sur la 2e ligne */
   .lang-dropdown {
     margin: 0;
+    flex-shrink: 0;
   }
 
   .lang-trigger {
-    min-width: 105px;
-    height: 40px;
+    min-width: 95px;
+    height: 38px;
     padding: 0 14px;
     font-size: 15px;
+    gap: 8px;
+  }
+
+  .lang-current, .lang-chevron {
+    display: inline;
+  }
+
+  .nav-button {
+    width: auto;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin-right: 0;
+    flex-shrink: 0;
+  }
+
+  .nav-button .btn-essayer {
+    padding: 8px 16px;
+    font-size: 13px;
+    border-radius: 10px;
+    white-space: nowrap;
   }
 
   .hero {
     min-height: 100vh;
     height: auto;
-    padding: 180px 20px 60px;
+    padding: 250px 20px 60px;
     justify-content: center;
     align-items: center;
     background-position: center right;
@@ -1003,6 +1094,7 @@ header {
 
 /* Mobile */
 @media (max-width: 768px) {
+  
     .processing-view {
         grid-template-columns: 1fr;
         width: 100%;

@@ -181,26 +181,23 @@ p a:hover {
     color: #0c5460;
     border: 1px solid #bee5eb;
 }
-/* =======================================================
-   CORRECTIF RESPONSIVE : PAGE INSCRIPTION / CONNEXION
-   ======================================================= */
 
 @media (max-width: 768px) {
   
-  /* 1. Passer de deux colonnes à une seule colonne */
+  
   .container {
-    flex-direction: column; /* Empile les sections verticalement */
-    height: auto; /* Permet à la page de défiler vers le bas */
+    flex-direction: column; 
+    height: auto;
   }
 
-  /* 2. Cacher ou adapter la section de gauche sur mobile */
+ 
   .left-section {
     padding: 40px 20px;
-    flex: none; /* Désactive le remplissage flexible */
+    flex: none; 
   }
 
   .left-section img {
-    height: 200px; /* On réduit l'image qui faisait 550px */
+    height: 200px;
     margin-top: 10px;
     max-width: 100%;
   }
@@ -210,7 +207,7 @@ p a:hover {
     margin-top: 10px;
   }
 
-  /* 3. Ajuster la section du formulaire (droite) */
+  
   .right-section {
     padding: 30px 15px;
     flex: none;
@@ -222,25 +219,25 @@ p a:hover {
     margin-bottom: 20px;
   }
 
-  /* 4. Élargir le formulaire pour qu'il ne soit plus écrasé */
+  
   form {
-    width: 90% !important; /* Prend presque toute la largeur sur téléphone */
+    width: 90% !important; 
   }
 
   input {
-    padding: 15px; /* Légèrement plus petit pour mobile */
-    font-size: 16px; /* Évite le zoom automatique sur iPhone */
+    padding: 15px; 
+    font-size: 16px; 
   }
 
-  /* 5. Ajuster le bouton pour qu'il soit visible et cliquable */
+  
   button {
-    width: 100%; /* Le bouton prend toute la largeur du formulaire */
+    width: 100%; 
     padding: 15px;
     font-size: 18px;
     margin-top: 20px;
   }
 
-  /* Ajuster l'icône de retour (home) pour qu'elle ne gêne pas */
+  
   .top-left-icon {
     top: 10px;
     left: 10px;

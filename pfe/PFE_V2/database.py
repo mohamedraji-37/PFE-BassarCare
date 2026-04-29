@@ -8,8 +8,8 @@ def create_connection():
         connection = mysql.connector.connect(
             host='localhost',
             user='root',
-            password='',          # XAMPP: souvent vide
-            database='Segment_db', # mets ici le nom exact de ta base phpMyAdmin
+            password='',          
+            database='Segment_db', 
             port=3306
         )
         print("✓ Connexion réussie à la base de données MySQL")
@@ -25,7 +25,7 @@ def create_database_if_not_exists():
         connection = mysql.connector.connect(
             host='localhost',
             user='root',
-            password='',   # XAMPP: souvent vide
+            password='',   
             port=3306
         )
         cursor = connection.cursor()

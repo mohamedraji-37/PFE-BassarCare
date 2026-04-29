@@ -11,12 +11,12 @@ html, body {
   font-family: 'Segoe UI', sans-serif;
 }
 body::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none; 
 }
 body,
 html {
   scroll-behavior: smooth;
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none; 
 }
 
 .admin-container {
@@ -70,7 +70,6 @@ html {
   color: white;
 }
 
-
 .logout-btn {
   display: block;
   width: 100%;
@@ -123,8 +122,6 @@ html {
   margin-bottom: 20px;
 }
 
-
-
 .model-list {
   list-style: none;
   padding: 0;
@@ -169,7 +166,6 @@ html {
     background: #2980b9;
 }
 
-/* Modal Styles */
 .model-item-actions {
     display: flex;
     gap: 8px;
@@ -185,14 +181,14 @@ html {
   height: 100vh;
   background-color: rgba(0,0,0,0.4);
 
-  /* Center content using flex */
+  
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .modal[style*="display: block"] {
-  display: flex !important; /* Ensure flex centering when shown */
+  display: flex !important; 
 }
 
 .modal-content {
@@ -204,7 +200,7 @@ html {
   border-radius: 8px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
   position: relative;
-  margin: 0; /* Remove default margin */
+  margin: 0; 
 }
 
 .close-modal {
@@ -221,7 +217,6 @@ html {
   color: #333;
 }
 
-/* Form groups in modal */
 .modal .form-group {
   margin-bottom: 15px;
 }
@@ -237,7 +232,6 @@ html {
   border: 1px solid #ddd;
   border-radius: 4px;
 }
-
 
 .status-badge {
     padding: 3px 8px;
@@ -276,16 +270,6 @@ html {
     text-decoration: none;
 }
 
-
-/*********************************************************/
-/*********************************************************/
-/*********************************************************/
-/*********************************************************/
-/*********************************************************/
-/*********************************************************/
-/*********************************************************/
-/*********************************************************/
-/*********************************************************/
 * {
   margin: 0;
   padding: 0;
@@ -304,10 +288,6 @@ body {
   min-height: 100vh;
 }
 
-
-
-
-/* Main Content */
 .main-content {
   flex: 1;
   padding: 2rem;
@@ -338,7 +318,6 @@ body {
   font-size: 1.1rem;
 }
 
-/* Upload Section */
 .upload-section {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
@@ -352,18 +331,17 @@ body {
   display: flex;
   gap: 1rem;
   align-items: center;
-  flex-wrap: wrap; /* allows wrapping on small screens */
+  flex-wrap: wrap; 
 }
 
 .upload-form .form-group {
   margin: 0;
-  flex: 1 1 220px; /* grow, shrink, min width */
+  flex: 1 1 220px; 
 }
-
 
 .file-input-wrapper,
 .text-input {
-    height: 56px; /* or whatever looks best for your design */
+    height: 56px; 
     min-height: 56px;
     box-sizing: border-box;
     display: flex;
@@ -436,8 +414,8 @@ body {
   background: linear-gradient(135deg, #48bb78, #38a169);
   color: white;
   border: none;
-  padding: 0 2rem;           /* Only horizontal padding */
-  height: 56px;              /* Match input height */
+  padding: 0 2rem;           
+  height: 56px;              
   min-height: 56px;
   border-radius: 12px;
   font-weight: 600;
@@ -446,9 +424,9 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  box-sizing: border-box;    /* Ensure padding doesn't increase height */
+  box-sizing: border-box;    
   line-height: 1; 
-  margin-top: 30px;           /* Prevent extra vertical space */
+  margin-top: 30px;           
 }
 
 .upload-btn,
@@ -467,7 +445,7 @@ body {
   background: linear-gradient(135deg, #48bb78, #38a169);
   color: white;
   border: none;
-  padding: 0 2rem; /* Only horizontal padding */
+  padding: 0 2rem; 
   border-radius: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -480,7 +458,6 @@ body {
   box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
 }
 
-/* Models Section */
 .models-section {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
@@ -619,59 +596,57 @@ body {
     gap: 1rem;
   }
 }
-/* ============================================================
-   CORRECTIFS FINAUX D'AFFICHAGE (POST-VIEWPORT)
-   ============================================================ */
+
 @media (max-width: 768px) {
-    /* 1. On libère la Sidebar des styles inline du HTML */
+    
     .admin-sidebar {
-        width: 100% !important; /* Force la sidebar à prendre toute la largeur */
-        position: relative !important; /* Elle ne doit plus flotter par-dessus le contenu */
+        width: 100% !important; 
+        position: relative !important; 
         height: auto !important;
         min-height: auto !important;
         padding: 1rem 0 !important;
-        display: block !important; /* On l'affiche comme un bloc normal */
+        display: block !important; 
     }
 
-    /* Ajustement du logo dans la sidebar */
+   
     .admin-sidebar .logo {
         padding: 1rem !important;
         margin-bottom: 1rem !important;
         border-bottom: 1px solid #eee !important;
     }
 
-    /* 2. On réinitialise le contenu principal */
+   
     .admin-main {
-        margin-left: 0 !important; /* Supprime l'espace prévu pour la sidebar PC */
+        margin-left: 0 !important; 
         width: 100% !important;
         padding: 10px !important;
         display: block !important;
     }
 
-    /* 3. On force les sections à utiliser 100% de la largeur disponible */
+    
     .dashboard-sections, .dashboard-section, .header, .upload-section, .models-section {
         width: 100% !important;
         margin-left: 0 !important;
         margin-right: 0 !important;
         padding: 15px !important;
-        border-radius: 10px !important; /* Des coins un peu moins arrondis sur mobile */
+        border-radius: 10px !important; 
     }
 
-    /* 4. On empile les éléments du formulaire de recherche et d'upload */
+    
     .upload-form, .search-form {
         display: flex !important;
         flex-direction: column !important;
         gap: 10px !important;
     }
 
-    /* On s'assure que les inputs ne débordent pas */
+    
     .form-group, .text-input, .file-input-wrapper, .upload-btn, .search-bar {
         width: 100% !important;
         max-width: 100% !important;
         margin: 5px 0 !important;
     }
 
-    /* 5. On ajuste les cartes de modèles/utilisateurs pour les petits écrans */
+    
     .model-info {
         flex-direction: column !important;
         align-items: flex-start !important;
@@ -691,12 +666,12 @@ body {
         justify-content: center !important;
     }
 }
-/* --- FORCE RESPONSIVE FINAL --- */
+
 @media (max-width: 768px) {
-    /* 1. On "casse" le mode fixe de la sidebar pour qu'elle passe au-dessus */
+    
     .admin-sidebar {
-        position: relative !important; /* Elle ne flotte plus */
-        width: 100% !important;        /* Elle prend toute la largeur */
+        position: relative !important; 
+        width: 100% !important;        
         height: auto !important;
         left: 0 !important;
         padding: 1rem !important;
@@ -707,27 +682,27 @@ body {
         align-items: center !important;
     }
 
-    /* 2. On ajuste la navigation pour qu'elle ne soit pas trop longue */
+    
     .admin-sidebar nav {
         width: 100% !important;
     }
     
     .nav-list {
         display: flex !important;
-        flex-wrap: wrap !important; /* Met les boutons côte à côte si possible */
+        flex-wrap: wrap !important; 
         justify-content: center !important;
         gap: 10px !important;
     }
 
-    /* 3. LE PLUS IMPORTANT : On enlève la marge qui pousse le contenu vers la droite */
+    
     .admin-main {
-        margin-left: 0 !important; /* Supprime le décalage de 260px */
+        margin-left: 0 !important; 
         width: 100% !important;
         padding: 10px !important;
         display: block !important;
     }
 
-    /* 4. On empile les formulaires (Recherche et Upload) */
+    
     .upload-form, .search-form {
         flex-direction: column !important;
         display: flex !important;
@@ -738,7 +713,7 @@ body {
         margin: 5px 0 !important;
     }
 
-    /* 5. On ajuste les cartes de modèles pour qu'elles rentrent dans l'écran */
+    
     .model-card {
         padding: 1rem !important;
         margin-left: 0 !important;
@@ -746,30 +721,28 @@ body {
     }
 
     .model-info {
-        flex-direction: column !important; /* Empile Nom et Actions */
+        flex-direction: column !important; 
         align-items: stretch !important;
     }
 
     .model-actions {
         margin-top: 15px !important;
-        flex-direction: row !important; /* Garde les boutons Modifier/Suppr côte à côte */
+        flex-direction: row !important; 
         justify-content: space-between !important;
     }
 }
-/* ============================================================
-   FORÇAGE TOTAL : RÉPARATION FINALE MOBILE
-   ============================================================ */
+
 @media (max-width: 768px) {
-    /* 1. On transforme le conteneur flex en colonne */
+    
     .admin-container {
-        display: block !important; /* Casse le Flexbox qui met la sidebar à gauche */
+        display: block !important; 
         width: 100% !important;
     }
 
-    /* 2. On neutralise complètement la sidebar fixe */
+    
     .admin-sidebar {
-        position: relative !important; /* Elle ne flotte plus par-dessus le texte */
-        width: 100% !important;        /* Elle prend toute la largeur en haut */
+        position: relative !important; 
+        width: 100% !important;        
         height: auto !important;
         min-height: auto !important;
         left: 0 !important;
@@ -781,16 +754,16 @@ body {
         z-index: 1 !important;
     }
 
-    /* 3. ON SUPPRIME LA MARGE GAUCHE (Le coupable principal) */
+    
     .admin-main {
-        margin-left: 0 !important;      /* Force le retour au bord gauche */
-        width: 100% !important;         /* Utilise tout l'écran */
+        margin-left: 0 !important;      
+        width: 100% !important;         
         padding: 10px !important;
         display: block !important;
         position: relative !important;
     }
 
-    /* 4. On répare les boîtes (sections) qui débordent */
+    
     .dashboard-sections, 
     .dashboard-section, 
     .header, 
@@ -801,10 +774,10 @@ body {
         margin-left: 0 !important;
         margin-right: 0 !important;
         padding: 15px !important;
-        box-shadow: none !important; /* Optionnel : simplifie le look sur petit écran */
+        box-shadow: none !important; 
     }
 
-    /* 5. On empile les éléments des formulaires */
+    
     .upload-form {
         flex-direction: column !important;
         display: flex !important;
@@ -815,20 +788,18 @@ body {
         margin-bottom: 15px !important;
     }
 
-    /* Bouton plein écran */
+    
     .upload-btn {
         width: 100% !important;
         margin-top: 10px !important;
         justify-content: center !important;
     }
 }
-/* ============================================================
-   DESIGN MOBILE AMÉLIORÉ (UI/UX)
-   ============================================================ */
+
 @media (max-width: 768px) {
-    /* 1. Sidebar transformée en Header Moderne */
+   
     .admin-sidebar {
-        background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d) !important; /* Dégradé pour le PFE */
+        background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d) !important; 
         color: white !important;
         padding: 15px 10px !important;
         box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
@@ -840,10 +811,10 @@ body {
         color: white !important;
     }
 
-    /* 2. Menu en grille d'icônes (plus propre sur mobile) */
+    
     .admin-sidebar .nav-list {
         display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important; /* 3 colonnes */
+        grid-template-columns: repeat(3, 1fr) !important; 
         gap: 10px !important;
         padding: 0 !important;
     }
@@ -853,7 +824,7 @@ body {
     }
 
     .admin-sidebar .nav-link {
-        flex-direction: column !important; /* Icône au-dessus du texte */
+        flex-direction: column !important; 
         text-align: center !important;
         font-size: 11px !important;
         padding: 10px 5px !important;
@@ -867,7 +838,7 @@ body {
         font-size: 20px !important;
     }
 
-    /* 3. Style des Sections et Cartes */
+    
     .dashboard-section {
         background: white !important;
         border-radius: 15px !important;
@@ -882,7 +853,7 @@ body {
         font-weight: 700 !important;
     }
 
-    /* 4. Inputs et Boutons "Soft" */
+    
     .text-input, .file-input-wrapper {
         border: 1.5px solid #edf2f7 !important;
         border-radius: 12px !important;
@@ -898,7 +869,7 @@ body {
         font-size: 13px !important;
     }
 
-    /* 5. Cartes de modèles plus élégantes */
+    
     .model-card {
         border: 1px solid #edf2f7 !important;
         border-radius: 12px !important;
@@ -911,7 +882,7 @@ body {
         color: #2d3748 !important;
     }
 
-    /* Actions en bas de carte */
+    
     .model-actions {
         border-top: 1px solid #f1f5f9 !important;
         padding-top: 10px !important;
@@ -924,11 +895,9 @@ body {
         height: 38px !important;
     }
 }
-/* ============================================================
-   DESIGN MOBILE HARMONISÉ (MÊMES COULEURS QUE PC)
-   ============================================================ */
+
 @media (max-width: 768px) {
-    /* 1. Sidebar devient un Header discret (Blanc/Gris comme le PC) */
+    
     .admin-sidebar {
         background: rgba(255, 255, 255, 0.98) !important;
         border-bottom: 1px solid #e5e7eb !important;
@@ -938,14 +907,14 @@ body {
 
     .admin-sidebar h2 {
         font-size: 18px !important;
-        color: #1a202c !important; /* Couleur sombre du PC */
+        color: #1a202c !important; 
         margin-bottom: 10px !important;
     }
 
-    /* 2. Menu en ligne (Navigation horizontale discrète) */
+  
     .admin-sidebar .nav-list {
         display: flex !important;
-        overflow-x: auto !important; /* Permet de défiler horizontalement si besoin */
+        overflow-x: auto !important; 
         white-space: nowrap !important;
         gap: 8px !important;
         padding-bottom: 5px !important;
@@ -956,11 +925,11 @@ body {
     }
 
     .admin-sidebar .nav-link {
-        background: #f7fafc !important; /* Gris très clair du PC */
+        background: #f7fafc !important; 
         color: #4a5568 !important;
         border: 1px solid #edf2f7 !important;
         padding: 8px 15px !important;
-        border-radius: 20px !important; /* Boutons arrondis style "pilule" */
+        border-radius: 20px !important; 
         font-size: 12px !important;
         display: flex !important;
         align-items: center !important;
@@ -972,14 +941,14 @@ body {
         font-size: 14px !important;
     }
 
-    /* 3. Contenu principal (On retire les marges) */
+   
     .admin-main {
         margin-left: 0 !important;
         padding: 15px !important;
-        background: #f5f6fa !important; /* Fond gris bleuâtre du PC */
+        background: #f5f6fa !important; 
     }
 
-    /* 4. Cartes de sections (Style épuré) */
+   
     .dashboard-section {
         background: white !important;
         border-radius: 12px !important;
@@ -988,7 +957,7 @@ body {
         padding: 15px !important;
     }
 
-    /* 5. Inputs et Boutons Bleus (Couleur PC) */
+  
     .text-input, .file-input-wrapper {
         border-radius: 8px !important;
         border: 1px solid #cbd5e0 !important;
@@ -996,7 +965,7 @@ body {
     }
 
     .upload-btn {
-        background: #3182ce !important; /* Bleu identique au PC */
+        background: #3182ce !important; 
         color: white !important;
         border-radius: 8px !important;
         height: 45px !important;
@@ -1004,9 +973,9 @@ body {
         box-shadow: 0 4px 6px rgba(49, 130, 206, 0.2) !important;
     }
 
-    /* 6. Liste des modèles (Cartes simplifiées) */
+    
     .model-card {
-        border-left: 4px solid #3182ce !important; /* Rappel du bleu */
+        border-left: 4px solid #3182ce !important; 
         margin-bottom: 10px !important;
         padding: 12px !important;
     }
@@ -1017,20 +986,18 @@ body {
         border-radius: 6px !important;
     }
 }
-/* ============================================================
-   STYLE DE L'ONGLET ACTIF SUR MOBILE
-   ============================================================ */
+
 @media (max-width: 768px) {
-    /* Style pour le lien qui a la classe 'active' */
+   
     .admin-sidebar .nav-link.active {
-        background-color: #2ecc71 !important; /* Le vert de ton application */
-        color: white !important;              /* Texte en blanc pour le contraste */
-        border-color: #27ae60 !important;     /* Bordure un peu plus foncée */
+        background-color: #2ecc71 !important; 
+        color: white !important;              
+        border-color: #27ae60 !important;     
         font-weight: bold !important;
         box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3) !important;
     }
 
-    /* On s'assure que l'icône dans l'onglet actif passe aussi en blanc */
+   
     .admin-sidebar .nav-link.active i,
     .admin-sidebar .nav-link.active svg {
         color: white !important;

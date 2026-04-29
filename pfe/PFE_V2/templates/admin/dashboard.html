@@ -7,47 +7,93 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-dashboard.css') }}">
   <script src="{{ url_for('static', filename='js/admin-dashboard.js') }}" defer></script>
+  
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="admin-container">
+
+    <!-- ═══════════════════════════════════════════
+         SIDEBAR
+    ═══════════════════════════════════════════ -->
     <div class="admin-sidebar" style="width:260px;background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-right:1px solid #e5e7eb;box-shadow:0 10px 40px rgba(0,0,0,0.08);padding:2rem 0;display:flex;flex-direction:column;align-items:center;position:fixed;top:0;left:0;height:100vh;z-index:10;">
       <div class="logo" style="padding:0 2rem 2rem;width:100%;border-bottom:1px solid #e5e7eb;margin-bottom:2rem;text-align:center;">
         <h2 style="font-size:1.5rem;font-weight:700;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:0;">
-         {{ _("Panneau d'administration") }}
+          {{ _("Panneau d'administration") }}
         </h2>
       </div>
       <nav style="width:100%;">
         <ul class="nav-list" style="list-style:none;padding:0 1rem;">
           <li>
-            <a href="#segmentation" class="nav-link{% if request.path == url_for('admin_dashboard') and not request.args.get('tab') or request.args.get('tab') == 'segmentation' %} active{% endif %}" style="display:flex;align-items:center;padding:1rem 1.2rem;margin-bottom:0.5rem;text-decoration:none;color:#4a5568;border-radius:12px;font-weight:500;transition:all 0.3s;">
-              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.75rem;" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-             {{ _('Modèles de segmentation') }}
+            <a href="#segmentation" class="nav-link{% if request.path == url_for('admin_dashboard') and not request.args.get('tab') or request.args.get('tab') == 'segmentation' %} active{% endif %}"
+              style="display:flex;align-items:center;padding:1rem 1.2rem;margin-bottom:0.5rem;text-decoration:none;color:#4a5568;border-radius:12px;font-weight:500;transition:all 0.3s;">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.75rem;" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+              </svg>
+              {{ _('Modèles de segmentation') }}
             </a>
           </li>
           <li>
-            <a href="#classification" class="nav-link{% if request.args.get('tab') == 'classification' %} active{% endif %}" style="display:flex;align-items:center;padding:1rem 1.2rem;margin-bottom:0.5rem;text-decoration:none;color:#4a5568;border-radius:12px;font-weight:500;transition:all 0.3s;">
-              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.75rem;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
-           {{ _('Modèles de classification') }}
+            <a href="#classification" class="nav-link{% if request.args.get('tab') == 'classification' %} active{% endif %}"
+              style="display:flex;align-items:center;padding:1rem 1.2rem;margin-bottom:0.5rem;text-decoration:none;color:#4a5568;border-radius:12px;font-weight:500;transition:all 0.3s;">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.75rem;" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/>
+              </svg>
+              {{ _('Modèles de classification') }}
             </a>
           </li>
           <li>
-            <a href="#users" class="nav-link{% if request.args.get('tab') == 'users' %} active{% endif %}" style="display:flex;align-items:center;padding:1rem 1.2rem;margin-bottom:0.5rem;text-decoration:none;color:#4a5568;border-radius:12px;font-weight:500;transition:all 0.3s;">
-              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.75rem;" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M17 11v-1a4 4 0 0 0-4-4h-1"/><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/></svg>
-             {{ _('Gestion des utilisateurs') }}
+            <a href="#users" class="nav-link{% if request.args.get('tab') == 'users' %} active{% endif %}"
+              style="display:flex;align-items:center;padding:1rem 1.2rem;margin-bottom:0.5rem;text-decoration:none;color:#4a5568;border-radius:12px;font-weight:500;transition:all 0.3s;">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.75rem;" viewBox="0 0 24 24">
+                <circle cx="9" cy="7" r="4"/><path d="M17 11v-1a4 4 0 0 0-4-4h-1"/>
+                <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/>
+              </svg>
+              {{ _('Gestion des utilisateurs') }}
             </a>
           </li>
+          <li>
+            <a href="#resultats" class="nav-link{% if request.args.get('tab') == 'resultats' %} active{% endif %}"
+              style="display:flex;align-items:center;padding:1rem 1.2rem;margin-bottom:0.5rem;text-decoration:none;color:#4a5568;border-radius:12px;font-weight:500;transition:all 0.3s;">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.75rem;" viewBox="0 0 24 24">
+                <path d="M9 17H5a2 2 0 0 0-2 2v2h18v-2a2 2 0 0 0-2-2h-4"/>
+                <rect x="7" y="3" width="10" height="11" rx="2"/>
+                <path d="M9 7h6M9 10h4"/>
+              </svg>
+              {{ _('Gestion des résultats') }}
+              {% if nb_en_attente is defined and nb_en_attente > 0 %}
+              <span style="margin-left:auto;background:linear-gradient(135deg,#f6ad55,#ed8936);color:white;font-size:0.75rem;font-weight:700;padding:0.2em 0.65em;border-radius:20px;min-width:22px;text-align:center;">{{ nb_en_attente }}</span>
+              {% endif %}
+            </a>
+          </li>
+<li>
+  <a href="#statistiques" class="nav-link"
+    style="display:flex;align-items:center;padding:1rem 1.2rem;margin-bottom:0.5rem;text-decoration:none;color:#4a5568;border-radius:12px;font-weight:500;transition:all 0.3s;">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.75rem;" viewBox="0 0 24 24">
+      <path d="M18 20V10M12 20V4M6 20v-6"/>
+    </svg>
+    Statistiques
+  </a>
+</li>
         </ul>
       </nav>
       <div class="logout-container" style="margin-top:auto;width:100%;padding:0 1.5rem;">
-        <a href="{{ url_for('logout') }}" class="logout-btn" style="width:100%;background:linear-gradient(135deg,#f56565,#e53e3e);color:white;border:none;padding:1rem 0;border-radius:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem;transition:all 0.3s;">
-          <svg width="20" height="20" fill="none" stroke="white" stroke-width="2" style="margin-right:0.5rem;" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7"/><path d="M7 8v8"/></svg>
-     {{ _('Se déconnecter') }}
+        <a href="{{ url_for('logout') }}" class="logout-btn"
+          style="width:100%;background:linear-gradient(135deg,#f56565,#e53e3e);color:white;border:none;padding:1rem 0;border-radius:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:0.5rem;transition:all 0.3s;text-decoration:none;">
+          <svg width="20" height="20" fill="none" stroke="white" stroke-width="2" style="margin-right:0.5rem;" viewBox="0 0 24 24">
+            <path d="M17 16l4-4m0 0l-4-4m4 4H7"/><path d="M7 8v8"/>
+          </svg>
+          {{ _('Se déconnecter') }}
         </a>
       </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════
+         CONTENU PRINCIPAL
+    ═══════════════════════════════════════════ -->
     <div class="admin-main">
       {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -58,185 +104,152 @@
       {% endwith %}
 
       <div class="dashboard-sections">
-        <!-- SEGMENTATION -->
-      <div id="segmentation" class="dashboard-section active">
-        <div class="header"
-          style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;margin-bottom:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
-          <h2
-            style="font-size:2rem;font-weight:700;margin-bottom:0.5rem;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-           {{ _('Modèles de segmentation') }}</h2>
-          <p style="color:#718096;font-size:1.1rem;">{{ _("Gérez et téléversez vos modèles de segmentation d'images") }}</p>
-        </div>
-      
-        <!-- Upload Section -->
-        <div class="upload-section"
-          style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;margin-bottom:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
-          <form class="upload-form" method="POST" action="{{ url_for('upload_model') }}" enctype="multipart/form-data">
-            <div class="form-group" style="display:flex;flex-direction:column;">
-              <label class="form-label" style="font-weight:600;margin-bottom:0.5rem;color:#2d3748;">{{ _('Fichier de modèle') }}</label>
-              <div class="file-input-wrapper"
-                style="position:relative;overflow:hidden;display:inline-block;background:linear-gradient(135deg,#f7fafc,#edf2f7);border:2px dashed #cbd5e0;border-radius:12px;padding:1rem;transition:all 0.3s;cursor:pointer;">
-                <input type="file" name="model_file" id="modelFile" class="file-input" accept=".pth" required
-                  style="position:absolute;left:-9999px;opacity:0;">
-                <label for="modelFile" class="file-input-label"
-                  style="display:flex;align-items:center;color:#4a5568;cursor:pointer;font-weight:500;">
-                  <svg style="margin-right:0.5rem;" width="20" height="20" fill="none" stroke="#667eea" stroke-width="2"
-                    viewBox="0 0 24 24">
-                    <path d="M12 5v14M5 12l7 7 7-7" />
-                  </svg>
-                  <span id="fileName">{{ _('Choisir un fichier') }}</span>
-                </label>
-              </div>
-            </div>
-            <div class="form-group" style="display:flex;flex-direction:column;">
-              <label class="form-label" for="modelName" style="font-weight:600;margin-bottom:0.5rem;color:#2d3748;">{{ _('Nom du modèle') }}
-              </label>
-              <input type="text" name="model_name" id="modelName" class="text-input" placeholder="{{ _('Entrez le nom du modèle') }}"
-                required style="padding:1rem;border:2px solid #e2e8f0;border-radius:12px;font-size:1rem;">
-            </div>
-            <button type="submit" class="upload-btn">
-              <svg width="20" height="20" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M12 5v14M5 12l7 7 7-7" />
-              </svg>
-            {{ _('Téléverser') }}
-            </button>
-          </form>
-        </div>
-      
-        <!-- Models Section -->
-        <div class="models-section"
-          style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
-          <div class="models-header" style="display:flex;align-items:center;margin-bottom:2rem;">
-            <h3 style="font-size:1.5rem;font-weight:700;display:flex;align-items:center;gap:0.5rem;">
-              <svg width="22" height="22" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24">
-                <ellipse cx="12" cy="7" rx="9" ry="3" />
-                <path d="M3 7v10c0 1.7 4 3 9 3s9-1.3 9-3V7" />
-                <path d="M3 17c0 1.7 4 3 9 3s9-1.3 9-3" />
-              </svg>
-            {{ _('Modèles téléversés') }}
-            </h3>
-          </div>
-          <form class="search-form" method="GET" action="{{ url_for('admin_dashboard') }}">
-            <input type="text" name="search_seg" class="search-bar" placeholder="{{ _('Rechercher des modèles...') }}"
-              style="width:100%;padding:1rem;border:2px solid #e2e8f0;border-radius:12px;font-size:1rem;margin-bottom:2rem;background:white;">
-          </form>
-          <div id="modelsList">
-            {% if segmentation_models|length == 0 %}
-            <div class="empty-state" style="text-align:center;padding:3rem;color:#718096;">
-              <svg width="48" height="48" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24">
-                <ellipse cx="12" cy="7" rx="9" ry="3" />
-                <path d="M3 7v10c0 1.7 4 3 9 3s9-1.3 9-3V7" />
-                <path d="M3 17c0 1.7 4 3 9 3s9-1.3 9-3" />
-              </svg>
-              <h3>{{ _('Aucun modèle trouvé') }}</h3>
-              <p>{{ _('Téléversez votre premier modèle pour commencer') }}</p>
-            </div>
-            {% else %}
-            {% for model in segmentation_models %}
-            <div class="model-card"
-              style="background:linear-gradient(135deg,#f7fafc,#edf2f7);border-radius:16px;padding:1.5rem;margin-bottom:1rem;border:1px solid rgba(255,255,255,0.2);transition:all 0.3s;">
-              <div class="model-info" style="display:flex;justify-content:space-between;align-items:center;">
-                <div class="model-details">
-                  <h4 style="font-size:1.25rem;font-weight:600;margin-bottom:0.5rem;color:#2d3748;">{{ model.model_name }}
-                  </h4>
-                  <div class="model-meta" style="color:#718096;font-size:0.9rem;display:flex;align-items:center;gap:0.5rem;">
-                    <svg width="18" height="18" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24">
-                      <rect x="3" y="4" width="18" height="18" rx="2" />
-                      <path d="M16 2v4M8 2v4M3 10h18" />
-                    </svg>
-                    <span>{{ model.upload_date }}</span>
-                    {% if model.size %}
-                    <svg width="18" height="18" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24"
-                      style="margin-left:1rem;">
-                      <rect x="3" y="4" width="18" height="18" rx="2" />
-                      <path d="M16 2v4M8 2v4M3 10h18" />
-                    </svg>
-                    <span>{{ model.size }}</span>
-                    {% endif %}
-                  </div>
-                </div>
-                <div class="model-actions" style="display:flex;gap:1rem;">
-                  <a class="action-btn modify-btn edit-btn" data-id="{{ model.id }}" data-name="{{ model.model_name }}"
-                    style="background:linear-gradient(135deg,#4299e1,#3182ce);color:white;padding:0.75rem 1.5rem;border:none;border-radius:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:0.5rem;">
-                    <svg width="18" height="18" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
-                      <path d="M12 20h9" />
-                      <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19.5 3 21l1.5-4L16.5 3.5z" />
-                    </svg>
-                {{ _('Modifier') }}
-                  </a>
-                  <a class="action-btn delete-btn delete-btn" href="{{ url_for('delete_model', model_id=model.id) }}"
-                    style="background:linear-gradient(135deg,#f56565,#e53e3e);color:white;padding:0.75rem 1.5rem;border:none;border-radius:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:0.5rem;">
-                    <svg width="18" height="18" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-                    </svg>
-                   {{ _('Supprimer') }}
-                  </a>
-                </div>
-              </div>
-            </div>
-            {% endfor %}
-            {% endif %}
-          </div>
-        </div>
-      </div>
 
-        <!-- CLASSIFICATION -->
-        <div id="classification" class="dashboard-section">
-          <div class="header"
-            style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;margin-bottom:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
-            <h2
-              style="font-size:2rem;font-weight:700;margin-bottom:0.5rem;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-             {{ _('Modèles de classification') }}</h2>
-            <p style="color:#718096;font-size:1.1rem;">{{ _("Gérez et téléversez vos modèles de classification d'images") }}</p>
+        <!-- ══════════════════════════════════════
+             SECTION : MODÈLES DE SEGMENTATION
+        ══════════════════════════════════════ -->
+        <div id="segmentation" class="dashboard-section active">
+          <div class="header" style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;margin-bottom:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+            <h2 style="font-size:2rem;font-weight:700;margin-bottom:0.5rem;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+              {{ _('Modèles de segmentation') }}
+            </h2>
+            <p style="color:#718096;font-size:1.1rem;">{{ _("Gérez et téléversez vos modèles de segmentation d'images") }}</p>
           </div>
-      
-          <!-- Upload Section -->
-          <div class="upload-section"
-            style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;margin-bottom:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+
+          <!-- Upload -->
+          <div class="upload-section" style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;margin-bottom:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
             <form class="upload-form" method="POST" action="{{ url_for('upload_model') }}" enctype="multipart/form-data">
               <div class="form-group" style="display:flex;flex-direction:column;">
                 <label class="form-label" style="font-weight:600;margin-bottom:0.5rem;color:#2d3748;">{{ _('Fichier de modèle') }}</label>
-                <div class="file-input-wrapper"
-                  style="position:relative;overflow:hidden;display:inline-block;background:linear-gradient(135deg,#f7fafc,#edf2f7);border:2px dashed #cbd5e0;border-radius:12px;padding:0.5rem 1rem;transition:all 0.3s;cursor:pointer;height:56px;min-height:56px;display:flex;align-items:center;">
-                  <input type="file" name="model_file" id="modelFileCls" class="file-input" accept=".pth" required
-                    style="position:absolute;left:-9999px;opacity:0;">
-                  <label for="modelFileCls" class="file-input-label"
-                    style="display:flex;align-items:center;color:#4a5568;cursor:pointer;font-weight:500;">
-                    <svg style="margin-right:0.5rem;" width="20" height="20" fill="none" stroke="#667eea" stroke-width="2"
-                      viewBox="0 0 24 24">
-                      <path d="M12 5v14M5 12l7 7 7-7" />
-                    </svg>
+                <div class="file-input-wrapper" style="position:relative;overflow:hidden;display:inline-block;background:linear-gradient(135deg,#f7fafc,#edf2f7);border:2px dashed #cbd5e0;border-radius:12px;padding:1rem;transition:all 0.3s;cursor:pointer;">
+                  <input type="file" name="model_file" id="modelFile" class="file-input" accept=".pth" required style="position:absolute;left:-9999px;opacity:0;">
+                  <label for="modelFile" class="file-input-label" style="display:flex;align-items:center;color:#4a5568;cursor:pointer;font-weight:500;">
+                    <svg style="margin-right:0.5rem;" width="20" height="20" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                    <span id="fileName">{{ _('Choisir un fichier') }}</span>
+                  </label>
+                </div>
+
+              </div>
+              <div class="form-group" style="display:flex;flex-direction:column;">
+                <label class="form-label" for="modelName" style="font-weight:600;margin-bottom:0.5rem;color:#2d3748;">{{ _('Nom du modèle') }}</label>
+                <input type="text" name="model_name" id="modelName" class="text-input" placeholder="{{ _('Entrez le nom du modèle') }}" required style="padding:1rem;border:2px solid #e2e8f0;border-radius:12px;font-size:1rem;">
+              </div>
+              <button type="submit" class="upload-btn">
+                <svg width="20" height="20" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                {{ _('Téléverser') }}
+              </button>
+            </form>
+          </div>
+
+          <!-- Liste modèles segmentation -->
+          <div class="models-section" style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+            <div class="models-header" style="display:flex;align-items:center;margin-bottom:2rem;">
+              <h3 style="font-size:1.5rem;font-weight:700;display:flex;align-items:center;gap:0.5rem;">
+                <svg width="22" height="22" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24">
+                  <ellipse cx="12" cy="7" rx="9" ry="3"/>
+                  <path d="M3 7v10c0 1.7 4 3 9 3s9-1.3 9-3V7"/>
+                  <path d="M3 17c0 1.7 4 3 9 3s9-1.3 9-3"/>
+                </svg>
+                {{ _('Modèles téléversés') }}
+              </h3>
+            </div>
+            <form class="search-form" method="GET" action="{{ url_for('admin_dashboard') }}">
+              <input type="text" name="search_seg" class="search-bar" placeholder="{{ _('Rechercher des modèles...') }}"
+                style="width:100%;padding:1rem;border:2px solid #e2e8f0;border-radius:12px;font-size:1rem;margin-bottom:2rem;background:white;">
+            </form>
+            <div id="modelsList">
+              {% if segmentation_models|length == 0 %}
+              <div class="empty-state" style="text-align:center;padding:3rem;color:#718096;">
+                <svg width="48" height="48" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24">
+                  <ellipse cx="12" cy="7" rx="9" ry="3"/>
+                  <path d="M3 7v10c0 1.7 4 3 9 3s9-1.3 9-3V7"/>
+                  <path d="M3 17c0 1.7 4 3 9 3s9-1.3 9-3"/>
+                </svg>
+                <h3>{{ _('Aucun modèle trouvé') }}</h3>
+                <p>{{ _('Téléversez votre premier modèle pour commencer') }}</p>
+              </div>
+              {% else %}
+              {% for model in segmentation_models %}
+              <div class="model-card" style="background:linear-gradient(135deg,#f7fafc,#edf2f7);border-radius:16px;padding:1.5rem;margin-bottom:1rem;border:1px solid rgba(255,255,255,0.2);transition:all 0.3s;">
+                <div class="model-info" style="display:flex;justify-content:space-between;align-items:center;">
+                  <div class="model-details">
+                    <h4 style="font-size:1.25rem;font-weight:600;margin-bottom:0.5rem;color:#2d3748;">{{ model.model_name }}</h4>
+                    <div class="model-meta" style="color:#718096;font-size:0.9rem;display:flex;align-items:center;gap:0.5rem;">
+                      <svg width="18" height="18" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                      <span>{{ model.upload_date }}</span>
+                      {% if model.size %}
+                      <svg width="18" height="18" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24" style="margin-left:1rem;"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                      <span>{{ model.size }}</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="model-actions" style="display:flex;gap:1rem;">
+                    <a class="action-btn modify-btn edit-btn" data-id="{{ model.id }}" data-name="{{ model.model_name }}"
+                      style="background:linear-gradient(135deg,#4299e1,#3182ce);color:white;padding:0.75rem 1.5rem;border:none;border-radius:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:0.5rem;">
+                      <svg width="18" height="18" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19.5 3 21l1.5-4L16.5 3.5z"/></svg>
+                      {{ _('Modifier') }}
+                    </a>
+                    <a class="action-btn delete-btn" href="{{ url_for('delete_model', model_id=model.id) }}"
+                      style="background:linear-gradient(135deg,#f56565,#e53e3e);color:white;padding:0.75rem 1.5rem;border:none;border-radius:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:0.5rem;">
+                      <svg width="18" height="18" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
+                      {{ _('Supprimer') }}
+                    </a>
+                  </div>
+                </div>
+
+              </div>
+              {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════
+             SECTION : MODÈLES DE CLASSIFICATION
+        ══════════════════════════════════════ -->
+        <div id="classification" class="dashboard-section">
+          <div class="header" style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;margin-bottom:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+            <h2 style="font-size:2rem;font-weight:700;margin-bottom:0.5rem;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+              {{ _('Modèles de classification') }}
+            </h2>
+            <p style="color:#718096;font-size:1.1rem;">{{ _("Gérez et téléversez vos modèles de classification d'images") }}</p>
+          </div>
+
+          <!-- Upload -->
+          <div class="upload-section" style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;margin-bottom:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+            <form class="upload-form" method="POST" action="{{ url_for('upload_model') }}" enctype="multipart/form-data">
+              <div class="form-group" style="display:flex;flex-direction:column;">
+                <label class="form-label" style="font-weight:600;margin-bottom:0.5rem;color:#2d3748;">{{ _('Fichier de modèle') }}</label>
+                <div class="file-input-wrapper" style="position:relative;overflow:hidden;display:inline-block;background:linear-gradient(135deg,#f7fafc,#edf2f7);border:2px dashed #cbd5e0;border-radius:12px;padding:0.5rem 1rem;transition:all 0.3s;cursor:pointer;height:56px;min-height:56px;display:flex;align-items:center;">
+                  <input type="file" name="model_file" id="modelFileCls" class="file-input" accept=".pth" required style="position:absolute;left:-9999px;opacity:0;">
+                  <label for="modelFileCls" class="file-input-label" style="display:flex;align-items:center;color:#4a5568;cursor:pointer;font-weight:500;">
+                    <svg style="margin-right:0.5rem;" width="20" height="20" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
                     <span id="fileNameCls">{{ _('Choisir un fichier') }}</span>
                   </label>
                 </div>
               </div>
               <div class="form-group" style="display:flex;flex-direction:column;">
-                <label class="form-label" for="modelNameCls" style="font-weight:600;margin-bottom:0.5rem;color:#2d3748;">{{ _('Nom du modèle') }} </label>
-                <input type="text" name="model_name" id="modelNameCls" class="text-input" placeholder="{{ _('Entrez le nom du modèle') }}"
-                  required style="padding:1rem;border:2px solid #e2e8f0;border-radius:12px;font-size:1rem;height:56px;min-height:56px;">
+                <label class="form-label" for="modelNameCls" style="font-weight:600;margin-bottom:0.5rem;color:#2d3748;">{{ _('Nom du modèle') }}</label>
+                <input type="text" name="model_name" id="modelNameCls" class="text-input" placeholder="{{ _('Entrez le nom du modèle') }}" required style="padding:1rem;border:2px solid #e2e8f0;border-radius:12px;font-size:1rem;height:56px;min-height:56px;">
                 <input type="hidden" name="model_type" value="classification">
               </div>
               <button type="submit" class="upload-btn">
-                <svg width="20" height="20" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
-                  <path d="M12 5v14M5 12l7 7 7-7" />
-                </svg>
-               {{ _('Téléverser') }}
+                <svg width="20" height="20" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                {{ _('Téléverser') }}
               </button>
             </form>
           </div>
-      
-          <!-- Models Section -->
-          <div class="models-section"
-            style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+
+          <!-- Liste modèles classification -->
+          <div class="models-section" style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
             <div class="models-header" style="display:flex;align-items:center;margin-bottom:2rem;">
               <h3 style="font-size:1.5rem;font-weight:700;display:flex;align-items:center;gap:0.5rem;">
                 <svg width="22" height="22" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24">
-                  <ellipse cx="12" cy="7" rx="9" ry="3" />
-                  <path d="M3 7v10c0 1.7 4 3 9 3s9-1.3 9-3V7" />
-                  <path d="M3 17c0 1.7 4 3 9 3s9-1.3 9-3" />
+                  <ellipse cx="12" cy="7" rx="9" ry="3"/>
+                  <path d="M3 7v10c0 1.7 4 3 9 3s9-1.3 9-3V7"/>
+                  <path d="M3 17c0 1.7 4 3 9 3s9-1.3 9-3"/>
                 </svg>
-              {{ _('Modèles téléversés') }}
+                {{ _('Modèles téléversés') }}
               </h3>
             </div>
             <form class="search-form" method="GET" action="{{ url_for('admin_dashboard') }}">
@@ -247,32 +260,24 @@
               {% if classification_models|length == 0 %}
               <div class="empty-state" style="text-align:center;padding:3rem;color:#718096;">
                 <svg width="48" height="48" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24">
-                  <ellipse cx="12" cy="7" rx="9" ry="3" />
-                  <path d="M3 7v10c0 1.7 4 3 9 3s9-1.3 9-3V7" />
-                  <path d="M3 17c0 1.7 4 3 9 3s9-1.3 9-3" />
+                  <ellipse cx="12" cy="7" rx="9" ry="3"/>
+                  <path d="M3 7v10c0 1.7 4 3 9 3s9-1.3 9-3V7"/>
+                  <path d="M3 17c0 1.7 4 3 9 3s9-1.3 9-3"/>
                 </svg>
                 <h3>{{ _('Aucun modèle trouvé') }}</h3>
                 <p>{{ _('Téléversez votre premier modèle pour commencer') }}</p>
               </div>
               {% else %}
               {% for model in classification_models %}
-              <div class="model-card"
-                style="background:linear-gradient(135deg,#f7fafc,#edf2f7);border-radius:16px;padding:1.5rem;margin-bottom:1rem;border:1px solid rgba(255,255,255,0.2);transition:all 0.3s;">
+              <div class="model-card" style="background:linear-gradient(135deg,#f7fafc,#edf2f7);border-radius:16px;padding:1.5rem;margin-bottom:1rem;border:1px solid rgba(255,255,255,0.2);transition:all 0.3s;">
                 <div class="model-info" style="display:flex;justify-content:space-between;align-items:center;">
                   <div class="model-details">
                     <h4 style="font-size:1.25rem;font-weight:600;margin-bottom:0.5rem;color:#2d3748;">{{ model.model_name }}</h4>
                     <div class="model-meta" style="color:#718096;font-size:0.9rem;display:flex;align-items:center;gap:0.5rem;">
-                      <svg width="18" height="18" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24">
-                        <rect x="3" y="4" width="18" height="18" rx="2" />
-                        <path d="M16 2v4M8 2v4M3 10h18" />
-                      </svg>
+                      <svg width="18" height="18" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                       <span>{{ model.upload_date }}</span>
                       {% if model.size %}
-                      <svg width="18" height="18" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24"
-                        style="margin-left:1rem;">
-                        <rect x="3" y="4" width="18" height="18" rx="2" />
-                        <path d="M16 2v4M8 2v4M3 10h18" />
-                      </svg>
+                      <svg width="18" height="18" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24" style="margin-left:1rem;"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                       <span>{{ model.size }}</span>
                       {% endif %}
                     </div>
@@ -280,18 +285,12 @@
                   <div class="model-actions" style="display:flex;gap:1rem;">
                     <a class="action-btn modify-btn edit-btn" data-id="{{ model.id }}" data-name="{{ model.model_name }}"
                       style="background:linear-gradient(135deg,#4299e1,#3182ce);color:white;padding:0.75rem 1.5rem;border:none;border-radius:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:0.5rem;">
-                      <svg width="18" height="18" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
-                        <path d="M12 20h9" />
-                        <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19.5 3 21l1.5-4L16.5 3.5z" />
-                      </svg>
+                      <svg width="18" height="18" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19.5 3 21l1.5-4L16.5 3.5z"/></svg>
                       {{ _('Modifier') }}
                     </a>
-                    <a class="action-btn delete-btn delete-btn" href="{{ url_for('delete_model', model_id=model.id) }}"
+                    <a class="action-btn delete-btn" href="{{ url_for('delete_model', model_id=model.id) }}"
                       style="background:linear-gradient(135deg,#f56565,#e53e3e);color:white;padding:0.75rem 1.5rem;border:none;border-radius:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:0.5rem;">
-                      <svg width="18" height="18" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-                      </svg>
+                      <svg width="18" height="18" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>
                       {{ _('Supprimer') }}
                     </a>
                   </div>
@@ -303,219 +302,647 @@
           </div>
         </div>
 
-        <!-- USERS -->
+        <!-- ══════════════════════════════════════
+             SECTION : GESTION DES UTILISATEURS
+        ══════════════════════════════════════ -->
+        <div id="users" class="dashboard-section">
+          <div class="header" style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;margin-bottom:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+            <h2 style="font-size:2rem;font-weight:700;margin-bottom:0.5rem;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+              {{ _('Gestion des utilisateurs') }}
+            </h2>
+            <p style="color:#718096;font-size:1.1rem;">{{ _('Gérez les utilisateurs, leurs statuts et leurs accès à la plateforme') }}</p>
+          </div>
 
-      <div id="users" class="dashboard-section">
-        <div class="header"
-          style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;margin-bottom:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
-          <h2 style="font-size:2rem;font-weight:700;margin-bottom:0.5rem;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-            {{ _('Gestion des utilisateurs') }}
-          </h2>
-          <p style="color:#718096;font-size:1.1rem;">{{ _('Gérez les utilisateurs, leurs statuts et leurs accès à la plateforme') }}</p>
-        </div>
-
-        <div class="models-section"
-          style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
-          <form method="GET" action="{{ url_for('admin_dashboard') }}" class="search-form" style="margin-bottom:2rem;">
-            <input type="text" name="search_user" class="search-bar" placeholder="{{ _('Rechercher des utilisateurs...') }}"
-              style="width:100%;padding:1rem;border:2px solid #e2e8f0;border-radius:12px;font-size:1rem;background:white;">
-          </form>
-          <div id="usersList">
-            {% if users|length == 0 %}
-            <div class="empty-state" style="text-align:center;padding:3rem;color:#718096;">
-              <svg width="48" height="48" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M16 16s-1.5-2-4-2-4 2-4 2"/>
-                <circle cx="12" cy="10" r="3"/>
-              </svg>
-              <h3>{{ _('Aucun utilisateur trouvé') }}</h3>
-              <p>{{ _('Ajoutez ou invitez des utilisateurs pour commencer') }}</p>
-            </div>
-            {% else %}
-            {% for user in users %}
-            <div class="model-card"
-              style="background:linear-gradient(135deg,#f7fafc,#edf2f7);border-radius:16px;padding:1.5rem;margin-bottom:1rem;border:1px solid rgba(255,255,255,0.2);transition:all 0.3s;">
-              <div class="model-info" style="display:flex;justify-content:space-between;align-items:center;">
-                <div class="model-details">
-                  <h4 style="font-size:1.15rem;font-weight:600;margin-bottom:0.5rem;color:#2d3748;">
-                    {{ user.first_name }} {{ user.last_name }}
-                    <span style="color:#718096;font-size:0.95em;font-weight:400;">({{ user.email }})</span>
-                  </h4>
-                  <div class="model-meta" style="color:#718096;font-size:0.95rem;display:flex;align-items:center;gap:1rem;">
-                    <span>
-                      <svg width="16" height="16" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:middle;">
-                        <rect x="2" y="7" width="20" height="13" rx="2"/>
-                        <path d="M16 3v4M8 3v4"/>
-                      </svg>
-                      {{ user.created_at }}
-                    </span>
-                    <span>
-                      {% if user.status == 'approved' %}
-                        <span class="status-badge approved" style="background:linear-gradient(135deg,#48bb78,#38a169);color:white;padding:0.3em 0.8em;border-radius:8px;">{{ _('Approuvé') }}</span>
-                      {% elif user.status == 'pending' %}
-                        <span class="status-badge pending" style="background:linear-gradient(135deg,#f6e05e,#ecc94b);color:#2d3748;padding:0.3em 0.8em;border-radius:8px;">{{ _('En attente') }}</span>
-                      {% elif user.status == 'rejected' %}
-                        <span class="status-badge rejected" style="background:linear-gradient(135deg,#f56565,#e53e3e);color:white;padding:0.3em 0.8em;border-radius:8px;">{{ _('Rejeté') }}</span>
-                      {% endif %}
-                    </span>
+          <div class="models-section" style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+            <form method="GET" action="{{ url_for('admin_dashboard') }}" class="search-form" style="margin-bottom:2rem;">
+              <input type="text" name="search_user" class="search-bar" placeholder="{{ _('Rechercher des utilisateurs...') }}"
+                style="width:100%;padding:1rem;border:2px solid #e2e8f0;border-radius:12px;font-size:1rem;background:white;">
+            </form>
+            <div id="usersList">
+              {% if users|length == 0 %}
+              <div class="empty-state" style="text-align:center;padding:3rem;color:#718096;">
+                <svg width="48" height="48" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M16 16s-1.5-2-4-2-4 2-4 2"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                <h3>{{ _('Aucun utilisateur trouvé') }}</h3>
+                <p>{{ _('Ajoutez ou invitez des utilisateurs pour commencer') }}</p>
+              </div>
+              {% else %}
+              {% for user in users %}
+              <div class="model-card" style="background:linear-gradient(135deg,#f7fafc,#edf2f7);border-radius:16px;padding:1.5rem;margin-bottom:1rem;border:1px solid rgba(255,255,255,0.2);transition:all 0.3s;">
+                <div class="model-info" style="display:flex;justify-content:space-between;align-items:center;">
+                  <div class="model-details">
+                    <h4 style="font-size:1.15rem;font-weight:600;margin-bottom:0.5rem;color:#2d3748;">
+                      {{ user.first_name }} {{ user.last_name }}
+                      <span style="color:#718096;font-size:0.95em;font-weight:400;">({{ user.email }})</span>
+                    </h4>
+                    <div class="model-meta" style="color:#718096;font-size:0.95rem;display:flex;align-items:center;gap:1rem;">
+                      <span>
+                        <svg width="16" height="16" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24" style="vertical-align:middle;">
+                          <rect x="2" y="7" width="20" height="13" rx="2"/><path d="M16 3v4M8 3v4"/>
+                        </svg>
+                        {{ user.created_at }}
+                      </span>
+                      <span>
+                        {% if user.status == 'approved' %}
+                          <span class="status-badge approved" style="background:linear-gradient(135deg,#48bb78,#38a169);color:white;padding:0.3em 0.8em;border-radius:8px;">{{ _('Approuvé') }}</span>
+                        {% elif user.status == 'pending' %}
+                          <span class="status-badge pending" style="background:linear-gradient(135deg,#f6e05e,#ecc94b);color:#2d3748;padding:0.3em 0.8em;border-radius:8px;">{{ _('En attente') }}</span>
+                        {% elif user.status == 'rejected' %}
+                          <span class="status-badge rejected" style="background:linear-gradient(135deg,#f56565,#e53e3e);color:white;padding:0.3em 0.8em;border-radius:8px;">{{ _('Rejeté') }}</span>
+                        {% endif %}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="model-actions" style="display:flex;gap:1rem;">
+                    {% if user.status == 'pending' %}
+                      <a class="action-btn modify-btn approve-btn" href="/admin/approve_user/{{ user.id }}"
+                        style="background:linear-gradient(135deg,#48bb78,#38a169);color:white;padding:0.7rem 1.2rem;border:none;border-radius:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:0.5rem;">
+                        ✓ {{ _('Approuver') }}
+                      </a>
+                      <a class="action-btn delete-btn reject-btn" href="/admin/reject_user/{{ user.id }}"
+                        style="background:linear-gradient(135deg,#f6e05e,#ecc94b);color:#2d3748;padding:0.7rem 1.2rem;border:none;border-radius:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:0.5rem;">
+                        ✗ {{ _('Rejeter') }}
+                      </a>
+                    {% elif user.status in ['approved', 'rejected'] and not user.is_admin %}
+                      <a class="action-btn delete-btn" href="{{ url_for('delete_user', user_id=user.id) }}"
+                        style="background:linear-gradient(135deg,#f56565,#e53e3e);color:white;padding:0.7rem 1.2rem;border:none;border-radius:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:0.5rem;">
+                        🗑️ {{ _('Supprimer') }}
+                      </a>
+                    {% endif %}
+                    <!-- Pas de bouton pour les admins -->
                   </div>
                 </div>
-                <div class="model-actions" style="display:flex;gap:1rem;">
-                  {% if user.status == 'pending' %}
-                    <a class="action-btn modify-btn approve-btn" href="/admin/approve_user/{{ user.id }}"
-                      style="background:linear-gradient(135deg,#48bb78,#38a169);color:white;padding:0.7rem 1.2rem;border:none;border-radius:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:0.5rem;">
-                      ✓ {{ _('Approuvé') }}
+              </div>
+              {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════
+             SECTION : GESTION DES RÉSULTATS
+        ══════════════════════════════════════ -->
+        <div id="resultats" class="dashboard-section">
+          <div class="header" style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;margin-bottom:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+            <h2 style="font-size:2rem;font-weight:700;margin-bottom:0.5rem;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+              {{ _('Gestion des résultats') }}
+            </h2>
+            <p style="color:#718096;font-size:1.1rem;">
+              {{ _("Validez ou refusez les résultats générés par l'IA avant leur affichage aux techniciens") }}
+            </p>
+          </div>
+
+          <div class="models-section" style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+            <div id="listeResultats">
+
+              {% if resultats_en_attente is not defined or resultats_en_attente|length == 0 %}
+              <!-- État vide -->
+              <div id="etatVide" style="text-align:center;padding:3rem;color:#718096;">
+                <svg width="56" height="56" fill="none" stroke="#667eea" stroke-width="1.5" viewBox="0 0 24 24"
+                  style="margin-bottom:1rem;display:block;margin-left:auto;margin-right:auto;">
+                  <path d="M9 17H5a2 2 0 0 0-2 2v2h18v-2a2 2 0 0 0-2-2h-4"/>
+                  <rect x="7" y="3" width="10" height="11" rx="2"/>
+                  <path d="M9 7h6M9 10h4"/>
+                </svg>
+                <h3 style="font-size:1.25rem;font-weight:600;margin-bottom:0.5rem;">{{ _('Aucun résultat en attente') }}</h3>
+                <p>{{ _('Tous les résultats ont été traités.') }}</p>
+              </div>
+
+              {% else %}
+              {% for res in resultats_en_attente %}
+              <!-- Carte résultat : id unique = type_id pour éviter collision entre les deux tables -->
+              <div class="result-card" id="result-card-{{ res.result_type }}-{{ res.id }}"
+                style="background:linear-gradient(135deg,#f7fafc,#edf2f7);border-radius:16px;padding:1.5rem;margin-bottom:1rem;border:1px solid rgba(102,126,234,0.15);transition:opacity 0.4s ease, transform 0.4s ease;">
+
+                <!-- Ligne : image + infos + Approuver/Refuser -->
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+
+                  <!-- Miniature image -->
+                  <div style="flex-shrink:0;">
+                    <img src="{{ url_for('uploaded_file', filename=res.image_id) }}"
+                      alt="{{ res.image_id }}"
+                      style="width:88px;height:88px;object-fit:cover;border-radius:12px;border:2px solid #e2e8f0;box-shadow:0 2px 10px rgba(0,0,0,0.1);"
+                      onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div style="display:none;width:88px;height:88px;border-radius:12px;background:linear-gradient(135deg,#e2e8f0,#cbd5e0);align-items:center;justify-content:center;">
+                      <svg width="34" height="34" fill="none" stroke="#a0aec0" stroke-width="1.5" viewBox="0 0 24 24">
+                        <rect x="3" y="3" width="18" height="18" rx="3"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <path d="M21 15l-5-5L5 21"/>
+                      </svg>
+                    </div>
+                  </div>
+
+                  <!-- Informations -->
+                  <div style="flex:1;min-width:220px;">
+                    <div style="font-size:0.78rem;color:#a0aec0;margin-bottom:0.5rem;font-family:monospace;word-break:break-all;">
+                      🖼 {{ res.image_id }}
+                    </div>
+                    <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.7rem;align-items:center;">
+                      {% if res.result_type == 'classification' %}
+                      <span style="background:linear-gradient(135deg,#4299e1,#3182ce);color:white;padding:0.2em 0.75em;border-radius:6px;font-size:0.82rem;font-weight:600;">
+                        {{ _('Classification') }}
+                      </span>
+                      {% else %}
+                      <span style="background:linear-gradient(135deg,#9f7aea,#805ad5);color:white;padding:0.2em 0.75em;border-radius:6px;font-size:0.82rem;font-weight:600;">
+                        {{ _('Segmentation') }}
+                      </span>
+                      {% endif %}
+                      <span style="background:linear-gradient(135deg,#f6e05e,#ecc94b);color:#2d3748;padding:0.2em 0.75em;border-radius:6px;font-size:0.82rem;font-weight:600;">
+                        ⏳ {{ _('En attente') }}
+                      </span>
+                      <span style="color:#718096;font-size:0.83rem;display:flex;align-items:center;gap:0.3rem;">
+                        <svg width="13" height="13" fill="none" stroke="#667eea" stroke-width="2" viewBox="0 0 24 24">
+                          <rect x="2" y="7" width="20" height="13" rx="2"/><path d="M16 3v4M8 3v4"/>
+                        </svg>
+                        {{ res.created_at }}
+                      </span>
+                    </div>
+                    <div style="background:white;border:1px solid #e2e8f0;border-radius:10px;padding:0.65rem 1rem;font-size:0.9rem;">
+                      {% if res.result_type == 'classification' %}
+                        <div style="margin-bottom:0.3rem;">
+                          <span style="font-weight:600;color:#4a5568;">{{ _('Diagnostic :') }}</span>
+                          <span style="color:#2d3748;margin-left:0.4rem;font-weight:600;">{{ res.predicted_class }}</span>
+                          {% if res.confidence %}
+                          <span style="color:#667eea;font-weight:700;margin-left:0.5rem;">
+                            — {{ "%.1f"|format(res.confidence * 100) }}%
+                          </span>
+                          {% endif %}
+                        </div>
+                        {% if res.prob_normal is not none and res.prob_glaucoma is not none %}
+                        <div style="display:flex;gap:1rem;font-size:0.82rem;color:#718096;">
+                          <span>Normal : <strong style="color:#38a169;">{{ "%.1f"|format(res.prob_normal * 100) }}%</strong></span>
+                          <span>Glaucome : <strong style="color:#e53e3e;">{{ "%.1f"|format(res.prob_glaucoma * 100) }}%</strong></span>
+                        </div>
+                        {% endif %}
+                      {% else %}
+                        <div style="margin-bottom:0.3rem;">
+                          <span style="font-weight:600;color:#4a5568;">{{ _('Métriques :') }}</span>
+                        </div>
+                        <div style="display:flex;flex-wrap:wrap;gap:0.8rem;font-size:0.82rem;color:#718096;">
+                          {% if res.iou is not none %}
+                          <span>IoU : <strong style="color:#667eea;">{{ "%.3f"|format(res.iou) }}</strong></span>
+                          {% endif %}
+                          {% if res.dice is not none %}
+                          <span>Dice : <strong style="color:#667eea;">{{ "%.3f"|format(res.dice) }}</strong></span>
+                          {% endif %}
+                          {% if res.precision_val is not none %}
+                          <span>Précision : <strong style="color:#667eea;">{{ "%.3f"|format(res.precision_val) }}</strong></span>
+                          {% endif %}
+                          {% if res.recall_val is not none %}
+                          <span>Rappel : <strong style="color:#667eea;">{{ "%.3f"|format(res.recall_val) }}</strong></span>
+                          {% endif %}
+                          {% if res.accuracy is not none %}
+                          <span>Exactitude : <strong style="color:#667eea;">{{ "%.3f"|format(res.accuracy) }}</strong></span>
+                          {% endif %}
+                          {% if res.iou is none and res.dice is none %}
+                          <span style="color:#a0aec0;font-style:italic;">{{ _('Métriques non disponibles (pas de vérité terrain)') }}</span>
+                          {% endif %}
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <!-- Boutons Approuver / Refuser -->
+                  <div style="display:flex;flex-direction:column;gap:0.6rem;flex-shrink:0;min-width:145px;">
+                    <a href="{{ url_for('approuver_resultat', result_type=res.result_type, result_id=res.id) }}"
+                      class="btn-action-result"
+                      data-uid="{{ res.result_type }}-{{ res.id }}"
+                      style="background:linear-gradient(135deg,#48bb78,#38a169);color:white;padding:0.7rem 1.2rem;border:none;border-radius:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:0.5rem;text-decoration:none;justify-content:center;transition:all 0.2s;font-size:0.88rem;">
+                      <svg width="16" height="16" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                      {{ _('Approuver') }}
                     </a>
-                    <a class="action-btn delete-btn reject-btn" href="/admin/reject_user/{{ user.id }}"
-                      style="background:linear-gradient(135deg,#f6e05e,#ecc94b);color:#2d3748;padding:0.7rem 1.2rem;border:none;border-radius:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:0.5rem;">
-                      ✗ {{ _('Rejeté') }}
+                    <a href="{{ url_for('refuser_resultat', result_type=res.result_type, result_id=res.id) }}"
+                      class="btn-action-result"
+                      data-uid="{{ res.result_type }}-{{ res.id }}"
+                      style="background:linear-gradient(135deg,#f56565,#e53e3e);color:white;padding:0.7rem 1.2rem;border:none;border-radius:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:0.5rem;text-decoration:none;justify-content:center;transition:all 0.2s;font-size:0.88rem;">
+                      <svg width="16" height="16" fill="none" stroke="white" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      {{ _('Refuser') }}
                     </a>
-                  {% elif user.status in ['approved', 'rejected'] and not user.is_admin %}
-                    <a class="action-btn delete-btn" href="{{ url_for('delete_user', user_id=user.id) }}"
-                      style="background:linear-gradient(135deg,#f56565,#e53e3e);color:white;padding:0.7rem 1.2rem;border:none;border-radius:10px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:0.5rem;">
-                      🗑️ {{ _('Supprimer') }}
-                    </a>
-                  {% endif %}
-                  <!-- Admin users have no action buttons -->
+                  </div>
+
+                </div>
+
+                <!-- Boutons Voir rapport + Télécharger PDF -->
+                <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:1rem;border-top:1px solid #e2e8f0;padding-top:1rem;">
+                  <button onclick="voirRapportAdmin('{{ res.result_type }}', {{ res.id }})"
+                    style="background:#fff;color:#667eea;border:2px solid #667eea;border-radius:10px;padding:0.55rem 1.1rem;font-weight:700;cursor:pointer;transition:all 0.2s;font-size:0.85rem;"
+                    onmouseover="this.style.background='#667eea';this.style.color='#fff'"
+                    onmouseout="this.style.background='#fff';this.style.color='#667eea'">
+                    {{ _('Voir rapport') }}
+                  </button>
+                  <a href="{{ url_for('admin_rapport_pdf', result_type=res.result_type, result_id=res.id) }}"
+                    style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:0.55rem 1.1rem;border:none;border-radius:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:0.4rem;text-decoration:none;transition:all 0.2s;font-size:0.85rem;">
+                    <svg width="14" height="14" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    {{ _('Télécharger PDF') }}
+                  </a>
                 </div>
               </div>
+              {% endfor %}
+              {% endif %}
+
             </div>
-            {% endfor %}
-            {% endif %}
+          </div>
+        </div>
+
+        <!-- ══════════════════════════════════════
+             SECTION : STATISTIQUES
+        ══════════════════════════════════════ -->
+        <div id="statistiques" class="dashboard-section">
+
+    <!-- Header -->
+    <div class="header" style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;margin-bottom:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+      <h2 style="font-size:2rem;font-weight:700;margin-bottom:0.5rem;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+        Statistiques du Glaucome
+      </h2>
+      <p style="color:#718096;font-size:1.1rem;">
+        Vue d'ensemble des analyses de classification réalisées par le modèle IA.
+        Retrouvez la liste complète des résultats et la répartition des diagnostics.
+      </p>
+    </div>
+
+    <!-- LISTE DES RÉSULTATS -->
+    <div style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;margin-bottom:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+      <h3 style="font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#667eea;margin-bottom:1.5rem;display:flex;align-items:center;gap:0.5rem;">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/>
+        </svg>
+        Liste des Résultats
+        <span style="flex:1;height:2px;background:linear-gradient(90deg,#667eea33,transparent);border-radius:2px;display:inline-block;margin-left:0.5rem;"></span>
+      </h3>
+      <div id="statResultList">
+        <div style="text-align:center;padding:3rem;color:#9ca3af;">
+          <div class="stat-spinner"></div>
+          <p style="margin-top:1rem;">Chargement…</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIAGRAMME + COMPTEURS -->
+    <div style="background:rgba(255,255,255,0.95);backdrop-filter:blur(20px);border-radius:20px;padding:2rem;box-shadow:0 10px 40px rgba(0,0,0,0.1);">
+      <h3 style="font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#667eea;margin-bottom:1.5rem;display:flex;align-items:center;gap:0.5rem;">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path d="M18 20V10M12 20V4M6 20v-6"/>
+        </svg>
+        Répartition globale
+        <span style="flex:1;height:2px;background:linear-gradient(90deg,#667eea33,transparent);border-radius:2px;display:inline-block;margin-left:0.5rem;"></span>
+      </h3>
+
+      <div style="display:flex;align-items:center;gap:2.5rem;flex-wrap:wrap;">
+        <!-- Donut -->
+        <div style="width:200px;height:200px;flex-shrink:0;">
+          <canvas id="statChart"></canvas>
+        </div>
+        <!-- Counters -->
+        <div style="display:flex;flex-direction:column;gap:0.75rem;flex:1;min-width:200px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.9rem 1.2rem;border-radius:12px;background:#fee2e2;color:#b91c1c;font-weight:600;">
+            <span>Glaucome détecté</span><span id="sc1" style="font-size:1.4rem;font-weight:800;">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.9rem 1.2rem;border-radius:12px;background:#dcfce7;color:#15803d;font-weight:600;">
+            <span>Normal</span><span id="sc2" style="font-size:1.4rem;font-weight:800;">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.9rem 1.2rem;border-radius:12px;background:#eef2ff;color:#4338ca;font-weight:600;">
+            <span>Total analysé</span><span id="sc3" style="font-size:1.4rem;font-weight:800;">—</span>
+          </div>
+          <div style="display:flex;gap:0.75rem;margin-top:0.5rem;flex-wrap:wrap;">
+            <span id="spct1" style="display:flex;align-items:center;gap:0.4rem;padding:0.4rem 0.9rem;border-radius:30px;background:#fee2e2;color:#b91c1c;font-size:0.84rem;font-weight:700;">
+              <span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block;"></span>— %
+            </span>
+            <span id="spct2" style="display:flex;align-items:center;gap:0.4rem;padding:0.4rem 0.9rem;border-radius:30px;background:#dcfce7;color:#15803d;font-size:0.84rem;font-weight:700;">
+              <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span>— %
+            </span>
           </div>
         </div>
       </div>
+    </div>
 
+  </div><!-- /statistiques -->
+
+      </div><!-- /dashboard-sections -->
+    </div><!-- /admin-main -->
+  </div><!-- /admin-container -->
+
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h2>{{ _('Modifier les données de modèle') }}</h2>
+      <form id="editModelForm" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="model_id" id="editModelId">
+        <div class="form-group">
+          <label for="editModelName">{{ _('Nom de modèle') }}</label>
+          <input type="text" id="editModelName" name="model_name" required>
+        </div>
+        <div class="form-group">
+          <label for="editModelFile">{{ _('Mise à jour le fichier (optionnel)') }}</label>
+          <input type="file" id="editModelFile" name="model_file">
+          <small>{{ _('Laisser vide pour conserver le fichier actuel') }}</small>
+        </div>
+        <button type="submit" class="btn-primary">{{ _('Enregistrer les modifications') }}</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       MODAL : Supprimer modèle
+  ══════════════════════════════════════ -->
+  <div class="modal fade" id="deleteModelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">{{ _('Confirmation de suppression') }}</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="fs-5">{{ _('Êtes-vous sûr de vouloir supprimer ce modèle?') }}</p>
+          <p class="text-danger"><strong>{{ _('Cette action est irréversible!') }}</strong> {{ _('Toutes les données associées seront définitivement supprimées.') }}</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Annuler') }}</button>
+          <a id="confirmModelDelete" href="#" class="btn btn-danger">{{ _('Confirmer la suppression') }}</a>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Edit Model Modal -->
-<div id="editModal" class="modal">
-  <div class="modal-content">
-    <span class="close-modal">&times;</span>
-    <h2>{{ _('Modifier les données de modèle') }}</h2>
-    <form id="editModelForm" method="POST" enctype="multipart/form-data">
-      <input type="hidden" name="model_id" id="editModelId">
-      <div class="form-group">
-        <label for="editModelName">{{ _('Nom de modèle') }}</label>
-        <input type="text" id="editModelName" name="model_name" required>
+  <!-- ══════════════════════════════════════
+       MODAL : Supprimer utilisateur
+  ══════════════════════════════════════ -->
+  <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">{{ _('Confirmation de suppression') }}</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="fs-5">{{ _('Êtes-vous sûr de vouloir supprimer cet utilisateur?') }}</p>
+          <p class="text-danger"><strong>{{ _('Cette action est irréversible!') }}</strong> {{ _('Toutes les données associées seront définitivement supprimées.') }}</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Annuler') }}</button>
+          <a id="confirmUserDelete" href="#" class="btn btn-danger">{{ _('Confirmer la suppression') }}</a>
+        </div>
       </div>
-      <div class="form-group">
-        <label for="editModelFile">{{ _('Mise à jour le fichier (optionnel)') }}</label>
-        <input type="file" id="editModelFile" name="model_file">
-        <small>{{ _('Laisser vide pour conserver le fichier actuel') }}</small>
-      </div>
-      <button type="submit" class="btn-primary">{{ _('Laisser vide pour conserver le fichier actuel') }}</button>
-    </form>
+    </div>
   </div>
-</div>
 
-<!-- Delete Model Modal -->
-<div class="modal fade" id="deleteModelModal" tabindex="-1" aria-hidden="true">
+  <!-- ══════════════════════════════════════
+       MODAL : Rejeter utilisateur
+  ══════════════════════════════════════ -->
+  <div class="modal fade" id="rejectUserModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">{{ _('Confirmation de suppression') }}</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="fs-5">{{ _('Êtes-vous sûr de vouloir supprimer ce modèle?') }}</p>
-                <p class="text-danger"><strong>{{ _('Cette action est irréversible!') }}</strong>{{ _('Toutes les données associées seront définitivement supprimées.') }}</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Annuler') }}</button>
-                <a id="confirmModelDelete" href="#" class="btn btn-danger">{{ _('Confirmer la suppression') }}</a>
-            </div>
+      <div class="modal-content">
+        <div class="modal-header bg-warning text-dark">
+          <h5 class="modal-title">{{ _('Confirmation de rejet') }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-    </div>
-</div>
-
-<!-- Delete User Modal -->
-<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">{{ _('Confirmation de suppression') }}</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="fs-5">{{ _('Êtes-vous sûr de vouloir supprimer cet utilisateur?') }}</p>
-                <p class="text-danger"><strong>{{ _('Cette action est irréversible!') }}</strong> {{ _('Toutes les données associées seront définitivement supprimées.') }}</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Annuler') }}</button>
-                <a id="confirmUserDelete" href="#" class="btn btn-danger">{{ _('Confirmer la suppression') }}</a>
-            </div>
+        <div class="modal-body">
+          <p class="fs-5">{{ _('Êtes-vous sûr de vouloir rejeter cet utilisateur?') }}</p>
+          <p class="text-warning"><strong>{{ _('Cette action est irréversible!') }}</strong> {{ _("L'utilisateur ne pourra plus accéder au système.") }}</p>
         </div>
-    </div>
-</div>
-
-<!-- Reject User Modal -->
-<div class="modal fade" id="rejectUserModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title">{{ _('Confirmation de rejet') }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="fs-5"><p class="fs-5">{{ _('Êtes-vous sûr de vouloir rejeter cet utilisateur?') }}</p>
-                <p class="text-warning"><strong>{{ _('Cette action est irréversible!') }}</strong> {{ _("L'utilisateur ne pourra plus accéder au système.") }}</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Annuler') }}</button>
-                <a id="confirmUserReject" href="#" class="btn btn-warning">{{ _('Confirmer le rejet') }}</a>
-            </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Annuler') }}</button>
+          <a id="confirmUserReject" href="#" class="btn btn-warning">{{ _('Confirmer le rejet') }}</a>
         </div>
+      </div>
     </div>
-</div>
+  </div>
 
-<script>
-    // Auto-hide flash messages after 2 seconds
-    document.addEventListener('DOMContentLoaded', function() {
-        const flashMessages = document.querySelectorAll('.alert');
-        flashMessages.forEach(message => {
-            setTimeout(() => {
-                message.style.opacity = '0';
-                setTimeout(() => message.remove(), 500);
-            }, 2500);
-        });
+  <!-- ══════════════════════════════════════
+       SCRIPTS
+  ══════════════════════════════════════ -->
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
 
-        // Model deletion confirmation
-        document.querySelectorAll('.delete-btn[href*="delete_model"]').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const deleteUrl = this.getAttribute('href');
-                document.getElementById('confirmModelDelete').setAttribute('href', deleteUrl);
-                const deleteModal = new bootstrap.Modal(document.getElementById('deleteModelModal'));
-                deleteModal.show();
-            });
-        });
-
-        // User deletion confirmation
-        document.querySelectorAll('.delete-btn[href*="delete_user"]').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const deleteUrl = this.getAttribute('href');
-                document.getElementById('confirmUserDelete').setAttribute('href', deleteUrl);
-                const deleteModal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
-                deleteModal.show();
-            });
-        });
-
-        // User rejection confirmation
-        document.querySelectorAll('.reject-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const rejectUrl = this.getAttribute('href');
-                document.getElementById('confirmUserReject').setAttribute('href', rejectUrl);
-                const rejectModal = new bootstrap.Modal(document.getElementById('rejectUserModal'));
-                rejectModal.show();
-            });
-        });
+    // ── Auto-masquer les messages flash après 2.5s ──
+    document.querySelectorAll('.alert').forEach(msg => {
+      setTimeout(() => {
+        msg.style.opacity = '0';
+        setTimeout(() => msg.remove(), 500);
+      }, 2500);
     });
-</script>
+
+    // ── Confirmation suppression modèle ──
+    document.querySelectorAll('.delete-btn[href*="delete_model"]').forEach(btn => {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.getElementById('confirmModelDelete').setAttribute('href', this.getAttribute('href'));
+        new bootstrap.Modal(document.getElementById('deleteModelModal')).show();
+      });
+    });
+
+    // ── Confirmation suppression utilisateur ──
+    document.querySelectorAll('.delete-btn[href*="delete_user"]').forEach(btn => {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.getElementById('confirmUserDelete').setAttribute('href', this.getAttribute('href'));
+        new bootstrap.Modal(document.getElementById('deleteUserModal')).show();
+      });
+    });
+
+    // ── Confirmation rejet utilisateur ──
+    document.querySelectorAll('.reject-btn').forEach(btn => {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.getElementById('confirmUserReject').setAttribute('href', this.getAttribute('href'));
+        new bootstrap.Modal(document.getElementById('rejectUserModal')).show();
+      });
+    });
+
+    // ── Approuver / Refuser résultat : animation disparition carte ──
+    document.querySelectorAll('.btn-action-result').forEach(btn => {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        const url  = this.getAttribute('href');
+        const uid  = this.dataset.uid;  // ex: "classification-3" ou "segmentation-7"
+        const card = document.getElementById('result-card-' + uid);
+        if (card) {
+          card.style.opacity   = '0';
+          card.style.transform = 'scale(0.94) translateX(40px)';
+          setTimeout(() => {
+            card.remove();
+            const restantes = document.querySelectorAll('.result-card');
+            if (restantes.length === 0) {
+              document.getElementById('listeResultats').innerHTML =
+                '<div style="text-align:center;padding:3rem;color:#718096;">' +
+                  '<svg width="56" height="56" fill="none" stroke="#667eea" stroke-width="1.5" viewBox="0 0 24 24" style="margin-bottom:1rem;display:block;margin-left:auto;margin-right:auto;">' +
+                    '<path d="M9 17H5a2 2 0 0 0-2 2v2h18v-2a2 2 0 0 0-2-2h-4"/>' +
+                    '<rect x="7" y="3" width="10" height="11" rx="2"/>' +
+                    '<path d="M9 7h6M9 10h4"/>' +
+                  '</svg>' +
+                  '<h3 style="font-size:1.25rem;font-weight:600;margin-bottom:0.5rem;">Aucun résultat en attente</h3>' +
+                  '<p>Tous les résultats ont été traités.</p>' +
+                '</div>';
+            }
+            window.location.href = url;
+          }, 400);
+        } else {
+          window.location.href = url;
+        }
+      });
+    });
+
+  });
+  </script>
+
+
+  <!-- ══════════════════════════════════════
+       MODAL : Voir rapport (Admin)
+  ══════════════════════════════════════ -->
+  <div class="modal fade" id="adminReportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header" style="background:linear-gradient(135deg,#667eea,#764ba2);">
+          <h5 class="modal-title" style="color:white;font-weight:700;">{{ _("Rapport d'analyse") }}</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <pre id="adminReportContent" style="white-space:pre-wrap;font-family:monospace;font-size:0.9rem;color:#2d3748;background:#f7fafc;padding:1.5rem;border-radius:12px;"></pre>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Fermer') }}</button>
+          <a id="adminDownloadReportBtn" href="#" download
+            class="btn"
+            style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;font-weight:600;">
+            {{ _('Télécharger PDF') }}
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+  <script>
+  async function voirRapportAdmin(resultType, resultId) {
+    try {
+      const response = await fetch(`/admin/rapport_texte/${resultType}/${resultId}`);
+      if (!response.ok) throw new Error('Erreur chargement rapport');
+      const data = await response.json();
+      document.getElementById('adminReportContent').textContent = data.rapport || 'Rapport non disponible';
+      document.getElementById('adminDownloadReportBtn').href = `/admin/rapport_pdf/${resultType}/${resultId}`;
+      document.getElementById('adminDownloadReportBtn').download = `rapport_${resultType}_${resultId}.pdf`;
+      new bootstrap.Modal(document.getElementById('adminReportModal')).show();
+    } catch (e) {
+      alert('Impossible de charger le rapport : ' + e.message);
+    }
+  }
+  </script>
+
+
+  <style>
+  .stat-spinner{width:32px;height:32px;border:3px solid #e5e7eb;border-top-color:#667eea;border-radius:50%;animation:statSpin 0.8s linear infinite;margin:0 auto;}
+  @keyframes statSpin{to{transform:rotate(360deg);}}
+  .stat-result-row{display:flex;align-items:center;gap:1rem;padding:0.9rem 1rem;border-radius:14px;border:1.5px solid #e5e7eb;background:#fafafa;margin-bottom:0.75rem;transition:box-shadow 0.2s;}
+  .stat-result-row:hover{box-shadow:0 6px 20px rgba(102,126,234,0.12);}
+  .stat-img-box{width:58px;height:58px;border-radius:10px;overflow:hidden;border:2px solid #e5e7eb;flex-shrink:0;background:#f3f4f6;display:flex;align-items:center;justify-content:center;}
+  .stat-img-box img{width:100%;height:100%;object-fit:cover;}
+  .stat-badge{padding:0.4rem 0.95rem;border-radius:30px;font-size:0.82rem;font-weight:700;flex-shrink:0;}
+  .stat-badge.malade{background:#fee2e2;color:#b91c1c;}
+  .stat-badge.normal{background:#dcfce7;color:#15803d;}
+  </style>
+
+  <script>
+  /* ── STATISTIQUES INLINE ── */
+  let statChart;
+
+  async function loadStats(){
+    try{
+      const res  = await fetch('/admin/statistiques');
+      const data = await res.json();
+      renderStatList(data.patients || []);
+      renderStatChart(data);
+    }catch(e){
+      document.getElementById('statResultList').innerHTML='<p style="color:#9ca3af;text-align:center;padding:2rem;">Erreur de chargement.</p>';
+    }
+  }
+
+  function renderStatList(patients){
+    const box = document.getElementById('statResultList');
+    if(!patients.length){
+      box.innerHTML='<p style="color:#9ca3af;text-align:center;padding:2rem;">Aucun résultat disponible.</p>';
+      return;
+    }
+    let html='<div>';
+    patients.forEach(p=>{
+      const isG = (p.predicted_class||'').toLowerCase().includes('glaucome');
+      const conf = p.confidence ? (p.confidence*100).toFixed(1)+'%' : '—';
+      html+=`
+      <div class="stat-result-row">
+        <div class="stat-img-box">
+          ${p.image_path
+            ? `<img src="/${p.image_path}" alt="Image">`
+            : `<svg width="26" height="26" fill="none" stroke="#d1d5db" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>`
+          }
+        </div>
+        <div style="flex:1;">
+          <div style="font-weight:600;color:#1f2937;">Image #${p.image_id||'—'}</div>
+          <div style="font-size:0.82rem;color:#9ca3af;">${p.created_at||'—'} &nbsp;·&nbsp; Confiance : ${conf}</div>
+        </div>
+        <div class="stat-badge ${isG?'malade':'normal'}">${isG?'Glaucome':'Normal'}</div>
+      </div>`;
+    });
+    html+='</div>';
+    box.innerHTML=html;
+  }
+
+  function renderStatChart(d){
+    document.getElementById('sc1').textContent = d.glaucome||0;
+    document.getElementById('sc2').textContent = d.normal||0;
+    document.getElementById('sc3').textContent = d.total||0;
+    const total = d.total||0;
+    const p1 = total ? ((d.glaucome/total)*100).toFixed(1) : 0;
+    const p2 = total ? ((d.normal/total)*100).toFixed(1) : 0;
+    document.getElementById('spct1').innerHTML=`<span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block;"></span>${p1} %`;
+    document.getElementById('spct2').innerHTML=`<span style="width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;"></span>${p2} %`;
+    const ctx = document.getElementById('statChart');
+    if(statChart) statChart.destroy();
+    statChart = new Chart(ctx,{
+      type:'doughnut',
+      data:{
+        labels:['Glaucome','Normal'],
+        datasets:[{data:[d.glaucome||0,d.normal||0],backgroundColor:['#ef4444','#22c55e'],borderWidth:0,hoverOffset:8}]
+      },
+      options:{cutout:'68%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label} : ${c.parsed} (${total?((c.parsed/total)*100).toFixed(1):0}%)`}}}}
+    });
+  }
+
+  /* ── Charger les stats quand la section devient visible ── */
+  document.addEventListener('DOMContentLoaded', function(){
+    const statsSection = document.getElementById('statistiques');
+    if(!statsSection) return;
+
+    let loaded = false;
+
+    // Observer : se déclenche quand la section reçoit la classe "active"
+    const observer = new MutationObserver(function(mutations){
+      mutations.forEach(function(m){
+        if(m.type === 'attributes' && m.attributeName === 'class'){
+          if(statsSection.classList.contains('active') && !loaded){
+            loaded = true;
+            loadStats();
+          }
+        }
+      });
+    });
+    observer.observe(statsSection, { attributes: true });
+
+    // Fallback : écouter aussi le clic direct sur le lien
+    const statsLink = document.querySelector('a[href="#statistiques"]');
+    if(statsLink){
+      statsLink.addEventListener('click', function(){
+        if(!loaded){ loaded = true; loadStats(); }
+      });
+    }
+
+    // Si la section est déjà active au chargement (URL avec #statistiques)
+    if(statsSection.classList.contains('active')){
+      loaded = true;
+      loadStats();
+    }
+  });
+  </script>
 
 </body>
 </html>

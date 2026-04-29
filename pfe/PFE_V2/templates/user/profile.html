@@ -26,6 +26,10 @@
                         {{ _('Segmentation') }}
                         <img src="{{ url_for('static', filename='assets/icon_segmentation.png') }}" alt="Segmentation" class="sidebar-icon">
                     </button>
+            <button class="sidebar-btn" data-type="adaptation" onclick="switchMode('adaptation')">
+             {{ _('Adaptation') }}
+                 <img src="{{ url_for('static', filename='assets/icon_adaptation.png') }}" class="sidebar-icon">
+                     </button>
                     <div class="profile-container">
                         <div class="profile-btn active" onclick="window.location.href='/user/profile'">
                             <div class="profile-pic">👤</div> 

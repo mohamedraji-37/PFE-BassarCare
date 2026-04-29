@@ -195,31 +195,29 @@ p a:hover {
     color: #0c5460;
     border: 1px solid #bee5eb;
 }
-/* =======================================================
-   CORRECTIF RESPONSIVE : PAGE SIGN-UP
-   ======================================================= */
+
 
 @media (max-width: 768px) {
   
-  /* 1. Passer en colonne pour éviter l'écrasement */
+  
   .container {
     flex-direction: column;
-    height: auto; /* Permet le défilement si le formulaire est long */
+    height: auto;
   }
 
   body {
     height: auto;
-    align-items: flex-start; /* Aligne le contenu au début */
+    align-items: flex-start; 
   }
 
-  /* 2. Ajuster la section de gauche (verte) */
+ 
   .left-section {
     padding: 30px 20px;
     flex: none;
   }
 
   .left-section img {
-    height: 180px; /* Réduit l'image de 640px qui est trop grande */
+    height: 180px; 
     margin-top: 10px;
     max-width: 90%;
   }
@@ -229,7 +227,7 @@ p a:hover {
     margin-top: 10px;
   }
 
-  /* 3. Ajuster la section du formulaire (droite) */
+  
   .right-section {
     padding: 20px 15px;
     flex: none;
@@ -240,18 +238,18 @@ p a:hover {
     margin-bottom: 25px;
   }
 
-  /* 4. Gérer les champs Nom / Prénom sur une ligne ou deux */
+  
   form {
-    width: 90% !important; /* Formulaire plus large sur petit écran */
+    width: 90% !important; 
   }
 
   .name-fields {
-    flex-direction: column; /* Empile Nom et Prénom pour plus de confort */
+    flex-direction: column; 
     gap: 0;
   }
 
   .name-fields input {
-    width: 100%; /* Chaque champ prend toute la largeur */
+    width: 100%;
   }
 
   input {
@@ -259,9 +257,9 @@ p a:hover {
     font-size: 16px;
   }
 
-  /* 5. Fixer le bouton S'inscrire */
+  
   button {
-    width: 100%; /* Le bouton prend toute la largeur pour ne plus être coupé */
+    width: 100%;
     padding: 15px;
     font-size: 18px;
     margin-top: 15px;

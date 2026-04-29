@@ -41,7 +41,7 @@ Explication : host="0.0.0.0" permet au  téléphone de "voir" le serveur qui tou
 ```
 
 ###  Lancer le serveur
-Dans le terminal de votre projet principal (Web), lancez la commande :
+Dans le terminal de projet principal (Web), lancez la commande :
 
 
 ```bash
@@ -171,4 +171,7 @@ L'utilisateur ouvre l'application mobile.
 L'application charge l'application web via l'adresse IP du serveur Flask.
 
 L'utilisateur peut utiliser les fonctionnalités depuis le téléphone.
+Remarque!:
+
+Pour que l’application mobile fonctionne correctement, le téléphone et l’ordinateur doivent être connectés au même réseau Wi-Fi.
 ```

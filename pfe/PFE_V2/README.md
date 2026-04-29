@@ -166,3 +166,179 @@ https://github.com/nikhilroxtomar/Retina-Blood-Vessel-Segmentation-in-PyTorch/
 ## 📬 Contact
 
 For issues, suggestions, or contributions, feel free to open an issue or a pull request on the repository.
+---
+## 🌍 BassarCare – Language
+
+Description
+
+The BassarCare application supports multiple languages in order to make the interface accessible to different users.
+
+The available languages are:
+
+🇫🇷 French
+EN English
+AR Arabic
+
+Translation management is implemented using Flask-Babel, the standard solution for Flask applications.
+
+This feature allows the application to:
+
+translate the entire user interface
+change the language dynamically
+keep the selected language during navigation
+## ⚙️ Technical Implementation
+##  Installation of Flask-Babel
+
+Install the required library:
+```bash
+pip install flask-babel
+```
+## Configuration in app.py
+
+Import Flask-Babel:
+```python
+from flask_babel import Babel, gettext as _, get_locale
+```
+Initialize Babel:
+```python
+babel = Babel(app)
+```
+## 🌐 Supported Languages
+
+Define the available languages in the application:
+```python
+LANGUAGES = {
+    'fr': 'Français',
+    'en': 'English',
+    'ar': 'العربية'
+}
+```
+## Dynamic Language Selection
+
+The selected language is stored in the user session.
+```python
+def select_locale():
+    return session.get('lang', 'fr')
+
+babel = Babel(app, locale_selector=select_locale)
+```
+How it works:
+
+if no language is selected → French by default
+the language remains active during the entire navigation
+## Route to Change the Language
+
+A route allows changing the application language.
+```python
+@app.route('/set-language/<lang>')
+def set_language(lang):
+    if lang in LANGUAGES:
+        session['lang'] = lang
+    return redirect(request.referrer or url_for('home'))
+babel = Babel(app, locale_selector=select_locale)
+```
+
+Function:
+
+saves the language in the session
+automatically reloads the page
+Injection into Templates
+
+To make translations accessible in HTML templates:
+```python
+@app.context_processor
+def inject_languages():
+    return {
+        'LANGUAGES': LANGUAGES,
+        'CURRENT_LANG': str(get_locale()),
+        '_': _
+    }
+```
+In HTML templates, you can write:
+
+{{ _('Connexion') }}
+## Modification of HTML Templates
+
+All interface texts have been replaced with translation functions.
+
+Before
+```
+<h1>Connexion</h1>
+```
+After
+```
+<h1>{{ _('Connexion') }}</h1>
+```
+This modification was applied to the following pages:
+
+Home
+Login / Signup
+User dashboard
+Admin dashboard
+Report pages
+## Generation of Translation Files
+
+Extraction of texts to translate:
+```bash
+pybabel extract -F babel.cfg -o messages.pot .
+```
+Initialization of languages:
+```bash
+pybabel init -i messages.pot -d translations -l en
+pybabel init -i messages.pot -d translations -l ar
+```
+Generated structure:
+
+translations/
+ ├── en/
+ │   └── LC_MESSAGES/messages.po
+ └── ar/
+     └── LC_MESSAGES/messages.po
+ Translation of .po Files
+
+Each text appears in the following form:
+
+msgid "Connexion"
+msgstr "Login"
+
+The file contains all the text strings that need to be translated.
+
+## Translations were adapted for:
+
+English
+Arabic
+user experience
+## Compilation of Translations
+
+Once the translation is finished, compile the files:
+```bash
+pybabel compile -d translations
+```
+This command generates:
+
+messages.mo
+
+ ## Without this step, translations will not be taken into account by Flask.
+
+## Language Change Button
+
+A menu allows the user to choose the language.
+
+Example in home.html:
+```
+<a href="{{ url_for('set_language', lang='en') }}">English</a>
+<a href="{{ url_for('set_language', lang='ar') }}">العربية</a>
+```
+How it works:
+
+the user clicks on a language
+the session is updated
+the page reloads with the new language
+## 📱 Mobile Compatibility
+
+Language management also works in the BassarCare mobile application, because it directly loads the Flask web application.
+
+Thus:
+
+the selected language is preserved
+the mobile interface is automatically translated.

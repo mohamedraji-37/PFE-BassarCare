@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'www',
   server: {
     
-    url: 'http://10.115.91.233:5000', 
+    url: 'http://192.168.0.155:5000', 
     cleartext: true
   }
 };

@@ -337,13 +337,103 @@ def admin_dashboard():
         """, (f'%{search_user}%',))
         users = cursor.fetchall()
 
+        # Résultats en attente de validation admin
+        cursor.execute("""
+            SELECT id, image_id, 'classification' AS result_type,
+                   predicted_class, confidence, statut, created_at, image_path,
+                   prob_normal, prob_glaucoma,
+                   NULL AS iou, NULL AS dice, NULL AS precision_val,
+                   NULL AS recall_val, NULL AS accuracy
+            FROM results_classification WHERE statut = 'en_attente'
+            UNION ALL
+            SELECT id, image_id, 'segmentation' AS result_type,
+                   NULL AS predicted_class, NULL AS confidence, statut, created_at, image_path,
+                   NULL AS prob_normal, NULL AS prob_glaucoma,
+                   iou, dice, precision_val, recall_val, accuracy
+            FROM results_segmentation WHERE statut = 'en_attente'
+            ORDER BY created_at DESC
+        """)
+        resultats_en_attente = cursor.fetchall()
+        nb_en_attente = len(resultats_en_attente)
+
+        # ── Statistiques descriptives ──────────────────────────
+        cursor.execute("""
+            SELECT predicted_class, confidence, image_id, created_at
+            FROM results_classification
+            WHERE statut = 'approuve'
+            ORDER BY created_at DESC
+        """)
+        stat_rows = cursor.fetchall()
+        stat_total = len(stat_rows)
+        stat_glaucome = sum(1 for r in stat_rows if r['predicted_class'] == 'Glaucome')
+        stat_normal = stat_total - stat_glaucome
+        stat_conf_moy = round(sum(r['confidence'] for r in stat_rows) / stat_total * 100, 1) if stat_total else 0
+        for r in stat_rows:
+            if r.get('created_at'):
+                r['created_at'] = str(r['created_at'])[:16]
+        stats = {
+            'total': stat_total,
+            'glaucome': stat_glaucome,
+            'normal': stat_normal,
+            'conf_moy': stat_conf_moy,
+            'pct_glaucome': round(stat_glaucome / stat_total * 100, 1) if stat_total else 0,
+            'pct_normal': round(stat_normal / stat_total * 100, 1) if stat_total else 0,
+            'patients': stat_rows,
+        }
+
         return render_template('admin/dashboard.html',
                              segmentation_models=segmentation_models,
                              classification_models=classification_models,
-                             users=users)
+                             users=users,
+                             resultats_en_attente=resultats_en_attente,
+                             nb_en_attente=nb_en_attente,
+                             stats=stats)
     finally:
         cursor.close()
         connection.close()
+
+# ---------------------------------------------------------------
+# ROUTE : Statistiques descriptives (Admin)
+# ---------------------------------------------------------------
+
+@app.route('/admin/statistiques')
+def admin_statistiques():
+    """Retourne les statistiques descriptives des résultats de classification."""
+    if not session.get('is_admin'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    connection = create_connection()
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT predicted_class, confidence, image_id, created_at, image_path
+            FROM results_classification
+            WHERE statut IN ('approuve', 'telecharge')
+            ORDER BY created_at DESC
+        """)
+        rows = cursor.fetchall()
+        total = len(rows)
+        glaucome = sum(1 for r in rows if r['predicted_class'] == 'Glaucome')
+        normal = total - glaucome
+        conf_moy = round(sum(r['confidence'] for r in rows) / total * 100, 1) if total else 0
+        pct_glaucome = round(glaucome / total * 100, 1) if total else 0
+        pct_normal = round(normal / total * 100, 1) if total else 0
+        # Formatage des dates pour l'affichage
+        for r in rows:
+            if r.get('created_at'):
+                r['created_at'] = str(r['created_at'])[:16]
+        return jsonify({
+            'total': total,
+            'glaucome': glaucome,
+            'normal': normal,
+            'conf_moy': conf_moy,
+            'pct_glaucome': pct_glaucome,
+            'pct_normal': pct_normal,
+            'patients': rows
+        })
+    finally:
+        cursor.close()
+        connection.close()
+
 
 # Téléchargement de modèle par l'admin
 @app.route('/admin/upload_model', methods=['POST'])
@@ -617,6 +707,236 @@ def reject_user(user_id):
 
 
 # ---------------------------------------------------------------
+# GESTION DES RÉSULTATS (Admin)
+# ---------------------------------------------------------------
+
+@app.route('/admin/soumettre_validation/<result_type>/<int:result_id>', methods=['POST'])
+def soumettre_validation(result_type, result_id):
+    """Permet au technicien de soumettre un résultat approuvé à la validation admin (passage en 'en_attente')."""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Non autorisé'}), 403
+    table = 'results_classification' if result_type == 'classification' else 'results_segmentation'
+    try:
+        connection = create_connection()
+        cursor = connection.cursor()
+        cursor.execute(
+            f"UPDATE {table} SET statut = 'en_attente', soumis_admin = 1 WHERE id = %s AND user_id = %s",
+            (result_id, session['user_id'])
+        )
+        connection.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+@app.route('/admin/approuver_resultat/<result_type>/<int:result_id>')
+def approuver_resultat(result_type, result_id):
+    if not session.get('is_admin'):
+        flash('Non autorisé', 'danger')
+        return redirect(url_for('login'))
+    table = 'results_classification' if result_type == 'classification' else 'results_segmentation'
+    try:
+        connection = create_connection()
+        cursor = connection.cursor()
+        cursor.execute(f"UPDATE {table} SET statut = 'approuve' WHERE id = %s", (result_id,))
+        connection.commit()
+        flash('Résultat approuvé avec succès.', 'success')
+    except Exception as e:
+        flash(f'Erreur: {str(e)}', 'danger')
+    finally:
+        cursor.close()
+        connection.close()
+    return redirect(url_for('admin_dashboard') + '#resultats')
+
+@app.route('/admin/refuser_resultat/<result_type>/<int:result_id>')
+def refuser_resultat(result_type, result_id):
+    if not session.get('is_admin'):
+        flash('Non autorisé', 'danger')
+        return redirect(url_for('login'))
+    table = 'results_classification' if result_type == 'classification' else 'results_segmentation'
+    try:
+        connection = create_connection()
+        cursor = connection.cursor()
+        cursor.execute(f"UPDATE {table} SET statut = 'refuse' WHERE id = %s", (result_id,))
+        connection.commit()
+        flash('Résultat refusé.', 'warning')
+    except Exception as e:
+        flash(f'Erreur: {str(e)}', 'danger')
+    finally:
+        cursor.close()
+        connection.close()
+    return redirect(url_for('admin_dashboard') + '#resultats')
+
+
+
+
+
+
+# ---------------------------------------------------------------
+# ROUTES ADMIN : RAPPORT TEXTE & PDF
+# ---------------------------------------------------------------
+
+@app.route('/admin/rapport_texte/<result_type>/<int:result_id>')
+def admin_rapport_texte(result_type, result_id):
+    if not session.get('is_admin'):
+        return jsonify({'error': 'Non autorise'}), 403
+    table = 'results_classification' if result_type == 'classification' else 'results_segmentation'
+    try:
+        connection = create_connection()
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(f"SELECT * FROM {table} WHERE id = %s", (result_id,))
+        r = cursor.fetchone()
+        if not r:
+            return jsonify({'error': 'Resultat non trouve'}), 404
+        # Recuperer les infos du technicien (meme rapport que celui recu par le client)
+        cursor.execute("SELECT first_name, last_name, cin FROM users WHERE id = %s", (r.get('user_id'),))
+        user = cursor.fetchone()
+        full_name = f"{user['first_name']} {user['last_name']}".strip() if user else 'Inconnu'
+        user_cin = str(user['cin']) if user else 'Inconnu'
+        if result_type == 'classification':
+            classification_results = {
+                'predicted_class_name': r.get('predicted_class', 'N/A'),
+                'confidence': float(r.get('confidence', 0)),
+                'prob_normal': float(r.get('prob_normal', 0)),
+                'prob_glaucoma': float(r.get('prob_glaucoma', 0)),
+            }
+            rapport = generate_classification_report(
+                classification_results,
+                r.get('image_id', 'Inconnu'),
+                operator_name=full_name,
+                patient_id=user_cin
+            )
+            rapport = remove_non_latin1(rapport)
+        else:
+            lines_txt = [
+                "Rapport d'Analyse - Segmentation",
+                f"Technicien : {full_name}",
+                f"Identifiant patient : {user_cin}",
+                f"Image : {r.get('image_id', 'Inconnu')}",
+                "",
+                "Metriques de segmentation :",
+            ]
+            for col, label in [('iou','IoU'),('dice','Dice'),('precision_val','Precision'),('recall_val','Rappel'),('accuracy','Exactitude')]:
+                val = r.get(col)
+                if val is not None:
+                    lines_txt.append(f"  {label} : {float(val)*100:.2f}%")
+            rapport = "\n".join(lines_txt)
+        return jsonify({'rapport': rapport})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+
+@app.route('/admin/rapport_pdf/<result_type>/<int:result_id>')
+def admin_rapport_pdf(result_type, result_id):
+    if not session.get('is_admin'):
+        flash('Non autorise', 'danger')
+        return redirect(url_for('login'))
+    table = 'results_classification' if result_type == 'classification' else 'results_segmentation'
+    try:
+        connection = create_connection()
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(f"SELECT * FROM {table} WHERE id = %s", (result_id,))
+        r = cursor.fetchone()
+        if not r:
+            flash('Resultat non trouve.', 'danger')
+            return redirect(url_for('admin_dashboard'))
+        # Recuperer les infos du technicien (meme rapport que celui recu par le client)
+        cursor.execute("SELECT first_name, last_name, cin FROM users WHERE id = %s", (r.get('user_id'),))
+        user = cursor.fetchone()
+        full_name = f"{user['first_name']} {user['last_name']}".strip() if user else 'Inconnu'
+        user_cin = str(user['cin']) if user else 'Inconnu'
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        logo_path = os.path.join('static', 'assets', 'new_logo_black.png')
+        if os.path.exists(logo_path):
+            pdf.image(logo_path, x=10, y=8, w=30)
+            pdf.set_xy(45, 10)
+        else:
+            pdf.set_xy(10, 10)
+        pdf.set_font("Arial", 'B', 18)
+        titre_type = "Classification" if result_type == 'classification' else "Segmentation"
+        pdf.cell(0, 10, "       Bassar, votre analyse retinienne", ln=True, align='L')
+        pdf.set_font("Arial", 'B', 16)
+        pdf.cell(0, 10, f"Rapport d'Analyse - {titre_type}", ln=True, align='C')
+        pdf.set_font("Arial", '', 12)
+        now = datetime.now()
+        pdf.cell(0, 10, f"Genere le: {now.strftime('%d/%m/%Y a %H:%M:%S')}", ln=True, align='C')
+        pdf.cell(0, 10, f"Utilisateur: {full_name}", ln=True, align='C')
+        pdf.cell(0, 10, f"Identifiant du patient: {user_cin}", ln=True, align='C')
+        pdf.ln(5)
+        image_path = r.get('image_path', '')
+        if image_path and os.path.exists(image_path):
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, "Image analysee:", ln=True)
+            pdf.image(image_path, x=pdf.get_x(), y=pdf.get_y(), w=80)
+            pdf.ln(75)
+        pdf.ln(10)
+        if result_type == 'classification':
+            classification_results = {
+                'predicted_class_name': r.get('predicted_class', 'N/A'),
+                'confidence': float(r.get('confidence', 0)),
+                'prob_normal': float(r.get('prob_normal', 0)),
+                'prob_glaucoma': float(r.get('prob_glaucoma', 0)),
+            }
+            report_text = generate_classification_report(
+                classification_results,
+                r.get('image_id', 'Inconnu'),
+                operator_name=full_name,
+                patient_id=user_cin
+            )
+            report_text = remove_non_latin1(report_text)
+            pdf.set_font("Arial", '', 11)
+            for line in report_text.splitlines():
+                pdf.multi_cell(0, 8, line)
+        else:
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, "Metriques de segmentation:", ln=True)
+            pdf.set_font("Arial", '', 11)
+            metric_explanations = {
+                'IoU': "Mesure le chevauchement entre la zone predite et la zone reelle.",
+                'Dice': "Evalue la similarite entre l'image predite et la verite terrain.",
+                'Precision': "Proportion des pixels predits positifs qui sont corrects.",
+                'Rappel': "Capacite du modele a detecter tous les pixels reellement positifs.",
+                'Exactitude': "Pourcentage global de pixels correctement classes."
+            }
+            for col, label in [('iou','IoU'),('dice','Dice'),('precision_val','Precision'),('recall_val','Rappel'),('accuracy','Exactitude')]:
+                val = r.get(col)
+                if val is not None:
+                    explanation = metric_explanations.get(label, "")
+                    pdf.set_font("Arial", 'B', 11)
+                    pdf.cell(50, 10, f"{label}: {float(val)*100:.2f}%", ln=0)
+                    pdf.set_font("Arial", '', 10)
+                    pdf.multi_cell(0, 10, explanation)
+                    pdf.ln(2)
+            result_path = r.get('result_path', '')
+            if result_path and os.path.exists(result_path):
+                pdf.ln(5)
+                pdf.set_font("Arial", 'B', 12)
+                pdf.cell(0, 10, "Image segmentee:", ln=True)
+                pdf.image(result_path, x=pdf.get_x(), y=pdf.get_y(), w=80)
+                pdf.ln(90)
+        pdf_bytes = pdf.output(dest='S').encode('latin1')
+        download_name = f"rapport_admin_{result_type}_{result_id}.pdf"
+        return send_file(
+            io.BytesIO(pdf_bytes),
+            as_attachment=True,
+            download_name=download_name,
+            mimetype="application/pdf"
+        )
+    except Exception as e:
+        flash(f'Erreur generation PDF: {str(e)}', 'danger')
+        return redirect(url_for('admin_dashboard'))
+    finally:
+        cursor.close()
+        connection.close()
+
+# ---------------------------------------------------------------
 # ROUTES UTILISATEUR
 # ---------------------------------------------------------------
 
@@ -628,8 +948,12 @@ def user_dashboard():
 
     models = []
     error = None
+    resultats_en_attente = []
     connection = None
     cursor = None
+    full_name = ''
+    active_mode = request.args.get('mode', 'classification')
+    user = None
 
     try:
         connection = create_connection()
@@ -639,7 +963,6 @@ def user_dashboard():
         user = cursor.fetchone()
         full_name = f"{user['first_name']} {user['last_name']}"
         
-        active_mode = request.args.get('mode', 'classification')
         # Récupération des modèles disponibles
         cursor.execute("""
             SELECT id, model_name, model_type 
@@ -648,6 +971,22 @@ def user_dashboard():
             ORDER BY model_type, upload_date DESC
         """)
         models = cursor.fetchall()
+
+        # Résultats en attente (persistent entre sessions)
+        cursor.execute("""
+            SELECT id, image_id, 'classification' AS result_type,
+                   predicted_class, CAST(confidence AS DECIMAL(10,4)) AS confidence, statut, created_at
+            FROM results_classification WHERE statut = 'en_attente' AND user_id = %s
+            UNION ALL
+            SELECT id, image_id, 'segmentation' AS result_type,
+                   NULL AS predicted_class, CAST(NULL AS DECIMAL(10,4)) AS confidence, statut, created_at
+            FROM results_segmentation WHERE statut = 'en_attente' AND user_id = %s
+            ORDER BY created_at DESC
+        """, (session['user_id'], session['user_id']))
+        resultats_en_attente = cursor.fetchall()
+
+        # Note : les résultats approuvés/refusés ne sont PAS chargés au démarrage.
+        # Ils apparaissent uniquement pendant la session via le polling JS (/user/check_approbations).
 
         if request.method == 'POST':
             # Traitement de l'image uploadée
@@ -715,7 +1054,8 @@ def user_dashboard():
                          error=error,
                          full_name=full_name,
                          active_mode=active_mode,
-                         user_cin=user['cin'])
+                         user_cin=user['cin'] if user else '',
+                         resultats_en_attente=resultats_en_attente)
 
 # page de profile d'utilisateur
 @app.route('/user/profile', methods=['GET', 'POST'])
@@ -974,6 +1314,42 @@ def process_image():
             response['overlay'] = url_for('uploaded_file', filename=f"overlay_{filename}")
         except Exception as overlay_error:
             print(f"⚠ Overlay creation failed: {str(overlay_error)}")
+
+        # Sauvegarde dans results_segmentation
+        # Le technicien choisit : 'en_attente' (validation admin) ou 'approuve' (direct)
+        try:
+            conn_seg = create_connection()
+            cur_seg = conn_seg.cursor()
+            # Récupérer les métriques calculées (si ground truth fourni)
+            m = response.get('metrics', {})
+            demande_validation = request.form.get('demande_validation', 'false').lower() == 'true'
+            statut_seg = 'en_attente' if demande_validation else 'approuve'
+            cur_seg.execute("""
+                INSERT INTO results_segmentation
+                (user_id, image_id, image_path, result_path,
+                 iou, dice, precision_val, recall_val, accuracy,
+                 statut, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+            """, (
+                session.get('user_id'),
+                filename,
+                os.path.join(app.config['UPLOAD_FOLDER'], filename),
+                os.path.join(app.config['UPLOAD_FOLDER'], result_filename),
+                m.get('iou', None),
+                m.get('dice', None),
+                m.get('precision', None),
+                m.get('recall', None),
+                m.get('accuracy', None),
+                statut_seg
+            ))
+            conn_seg.commit()
+            response['result_id'] = cur_seg.lastrowid
+            response['statut'] = statut_seg
+        except Exception as seg_db_err:
+            print(f"⚠ Sauvegarde segmentation échouée: {str(seg_db_err)}")
+        finally:
+            if 'cur_seg' in locals(): cur_seg.close()
+            if 'conn_seg' in locals() and conn_seg.is_connected(): conn_seg.close()
 
         return jsonify(response)
 
@@ -1245,8 +1621,8 @@ def perform_classification(model, img_tensor, device):
         
         predicted_class = predicted[0].item()
         confidence = probabilities[0][predicted_class].item()
-        prob_normal = probabilities[0][0].item()
-        prob_glaucoma = probabilities[0][1].item();
+        prob_glaucoma = probabilities[0][0].item()  # index 0 = Glaucome
+        prob_normal = probabilities[0][1].item()    # index 1 = Normal
         
         class_names = ['Glaucome', 'Normal']
         
@@ -1352,21 +1728,17 @@ def generate_classification_report(classification_results, filename, patient_id=
         prob_normal = classification_results.get('prob_normal', 0)
         prob_glaucoma = classification_results.get('prob_glaucoma', 0)
         
-        # CORRECTION: Inversion des probabilités car le modèle est inversé
-        # Le modèle prédit "normal" pour glaucome et "glaucoma" pour normal
-        prob_normal_corrected = prob_glaucoma  # Ce qui est étiqueté "glaucoma" est en fait normal
-        prob_glaucoma_corrected = prob_normal  # Ce qui est étiqueté "normal" est en fait glaucome
+        prob_normal_corrected = prob_normal
+        prob_glaucoma_corrected = prob_glaucoma
         
-        # Détermination du vrai diagnostic basé sur la probabilité la plus élevée
+        # Détermination du diagnostic basé sur la probabilité la plus élevée
         if prob_normal_corrected > prob_glaucoma_corrected:
             predicted_class_corrected = "NORMALE"
             is_glaucoma_case = False
-            # La confiance est la probabilité la plus élevée
             confidence_corrected = prob_normal_corrected
         else:
             predicted_class_corrected = "GLAUCOME"
             is_glaucoma_case = True
-            # La confiance est la probabilité la plus élevée
             confidence_corrected = prob_glaucoma_corrected
         
         # Métadonnées du rapport
@@ -1958,7 +2330,7 @@ def classify_image_debug():
 📊 ANALYSE RAPIDE:
 - Classe: {classification_results['predicted_class_name']}
 - Confiance: {classification_results['confidence']*100:.2f}%
-- Probabilités: Normal={classification_results['prob_normal']*100:.2f}%, Glaucome={classification_results['prob_glaucoma']*100:.2f}%
+- Probabilités: Normal={classification_results['prob_glaucoma']*100:.2f}%, Glaucome={classification_results['prob_normal']*100:.2f}%
 """
             
             # Construction de la réponse JSON avec les données centralisées
@@ -1983,7 +2355,39 @@ def classify_image_debug():
             
             logger.info("✅ Réponse générée avec succès")
             logger.info(f"📊 Réponse: {json.dumps(response_data, indent=2)}")
-            
+
+            # Sauvegarde du résultat en base
+            # Le technicien choisit : 'en_attente' (validation admin) ou 'approuve' (direct)
+            try:
+                conn_save = create_connection()
+                cur_save = conn_save.cursor()
+                demande_validation_cls = request.form.get('demande_validation', 'false').lower() == 'true'
+                statut_cls = 'en_attente' if demande_validation_cls else 'approuve'
+                cur_save.execute("""
+    INSERT INTO results_classification
+    (user_id, image_id, image_path, predicted_class, confidence,
+     prob_normal, prob_glaucoma, statut, created_at)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
+""", (
+    session.get('user_id'),
+    filename,
+    os.path.join(app.config['UPLOAD_FOLDER'], filename),
+    classification_results['predicted_class_name'],
+    float(classification_results['confidence']),
+    float(classification_results['prob_normal']),
+    float(classification_results['prob_glaucoma']),
+    statut_cls
+))
+                conn_save.commit()
+                response_data['result_id'] = cur_save.lastrowid
+                response_data['statut'] = statut_cls
+                logger.info(f"✅ Résultat sauvegardé ({statut_cls}), id={cur_save.lastrowid}")
+            except Exception as db_save_error:
+                logger.warning(f"⚠️ Sauvegarde résultat échouée: {str(db_save_error)}")
+            finally:
+                if 'cur_save' in locals(): cur_save.close()
+                if 'conn_save' in locals() and conn_save.is_connected(): conn_save.close()
+
             return jsonify(response_data)
             
         except Exception as response_error:
@@ -2250,6 +2654,356 @@ def contact():
         flash('Une erreur est survenue. Essayez plus tard.', 'error')
     
     return render_template('home/home.html')   # ou une page de remerciement
+# Resultat
+@app.route('/user/telecharger_resultat/<result_type>/<int:result_id>', methods=['GET'])
+def telecharger_resultat(result_type, result_id):
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Non autorisé'}), 403
+    table = 'results_classification' if result_type == 'classification' else 'results_segmentation'
+    try:
+        connection = create_connection()
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(
+            f"SELECT * FROM {table} WHERE id = %s AND statut = 'approuve' AND user_id = %s",
+            (result_id, session['user_id'])
+        )
+        r = cursor.fetchone()
+        if not r:
+            return jsonify({'error': 'Résultat non trouvé ou non autorisé'}), 404
+        return jsonify({'pdf_url': url_for('rapport_pdf', result_type=result_type, result_id=result_id)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+@app.route('/user/check_approbations')
+def check_approbations():
+    """Retourne les résultats passés à 'approuve' pour l'utilisateur courant (polling JS)."""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Non autorisé'}), 403
+    try:
+        connection = create_connection()
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT id, image_id, 'classification' AS result_type, predicted_class, created_at
+            FROM results_classification WHERE statut = 'approuve' AND soumis_admin = 1 AND user_id = %s
+            UNION ALL
+            SELECT id, image_id, 'segmentation' AS result_type, NULL AS predicted_class, created_at
+            FROM results_segmentation WHERE statut = 'approuve' AND soumis_admin = 1 AND user_id = %s
+            ORDER BY created_at DESC
+        """, (session['user_id'], session['user_id']))
+        approuves = cursor.fetchall()
+        # Convertir les dates en string pour JSON
+        for r in approuves:
+            if r.get('created_at'):
+                r['created_at'] = r['created_at'].strftime('%d/%m/%Y %H:%M')
+        return jsonify({'approuves': approuves})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+
+
+
+@app.route('/user/marquer_telecharge/<result_type>/<int:result_id>', methods=['POST'])
+def marquer_telecharge(result_type, result_id):
+    """Marque un resultat comme telecharge pour qu il ne reapparaisse plus apres actualisation."""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Non autorise'}), 403
+    table = 'results_classification' if result_type == 'classification' else 'results_segmentation'
+    try:
+        connection = create_connection()
+        cursor = connection.cursor()
+        cursor.execute(
+            f"UPDATE {table} SET statut = 'telecharge' WHERE id = %s AND user_id = %s AND statut = 'approuve'",
+            (result_id, session['user_id'])
+        )
+        connection.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+@app.route('/user/rapport_texte/<result_type>/<int:result_id>')
+def rapport_texte(result_type, result_id):
+    """Retourne le rapport en texte JSON pour l'affichage dans la modal (bouton Voir rapport)."""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Non autorisé'}), 403
+    table = 'results_classification' if result_type == 'classification' else 'results_segmentation'
+    try:
+        connection = create_connection()
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(
+            f"SELECT * FROM {table} WHERE id = %s AND statut = 'approuve' AND user_id = %s",
+            (result_id, session['user_id'])
+        )
+        r = cursor.fetchone()
+        if not r:
+            return jsonify({'error': 'Résultat non trouvé'}), 404
+
+        user_fname = session.get('first_name', '')
+        user_lname = session.get('last_name', '')
+        full_name = f"{user_fname} {user_lname}".strip() or 'Utilisateur inconnu'
+        user_cin = str(session.get('cin', 'Inconnu'))
+
+        if result_type == 'classification':
+            classification_results = {
+                'predicted_class_name': r.get('predicted_class', 'N/A'),
+                'confidence': float(r.get('confidence', 0)),
+                'prob_normal': float(r.get('prob_normal', 0)),
+                'prob_glaucoma': float(r.get('prob_glaucoma', 0)),
+            }
+            rapport = generate_classification_report(
+                classification_results,
+                r.get('image_id', 'Inconnu'),
+                operator_name=full_name,
+                patient_id=user_cin
+            )
+            rapport = remove_non_latin1(rapport)
+        else:
+            lines = [
+                f"Rapport d'Analyse - Segmentation",
+                f"Utilisateur : {full_name}",
+                f"Identifiant patient : {user_cin}",
+                f"Image : {r.get('image_id', 'Inconnu')}",
+                "",
+                "Métriques de segmentation :",
+            ]
+            metrics_map = {
+                'iou': 'IoU',
+                'dice': 'Dice',
+                'precision_val': 'Précision',
+                'recall_val': 'Rappel',
+                'accuracy': 'Exactitude'
+            }
+            for col, label in metrics_map.items():
+                val = r.get(col)
+                if val is not None:
+                    lines.append(f"  {label} : {float(val)*100:.2f}%")
+            rapport = "\n".join(lines)
+
+        return jsonify({'rapport': rapport})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+
+@app.route('/user/rapport_pdf/<result_type>/<int:result_id>')
+def rapport_pdf(result_type, result_id):
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    table = 'results_classification' if result_type == 'classification' else 'results_segmentation'
+    try:
+        connection = create_connection()
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(
+            f"SELECT * FROM {table} WHERE id = %s AND statut = 'approuve' AND user_id = %s",
+            (result_id, session['user_id'])
+        )
+        r = cursor.fetchone()
+        if not r:
+            flash('Résultat non trouvé ou non autorisé.', 'danger')
+            return redirect(url_for('user_dashboard'))
+
+        user_fname = session.get('first_name', '')
+        user_lname = session.get('last_name', '')
+        full_name = f"{user_fname} {user_lname}".strip() or 'Utilisateur inconnu'
+        user_cin = str(session.get('cin', 'Inconnu'))
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_auto_page_break(auto=True, margin=15)
+
+        # Logo — identique au rapport original
+        logo_path = os.path.join('static', 'assets', 'new_logo_black.png')
+        if os.path.exists(logo_path):
+            pdf.image(logo_path, x=10, y=8, w=30)
+            pdf.set_xy(45, 10)
+        else:
+            pdf.set_xy(10, 10)
+
+        pdf.set_font("Arial", 'B', 18)
+        titre_type = "Classification" if result_type == 'classification' else "Segmentation"
+        pdf.cell(0, 10, "       Bassar, votre analyse retinienne", ln=True, align='L')
+        pdf.set_font("Arial", 'B', 16)
+        pdf.cell(0, 10, f"Rapport d'Analyse - {titre_type}", ln=True, align='C')
+        pdf.set_font("Arial", '', 12)
+        now = datetime.now()
+        pdf.cell(0, 10, f"Genere le: {now.strftime('%d/%m/%Y a %H:%M:%S')}", ln=True, align='C')
+        pdf.cell(0, 10, f"Utilisateur: {full_name}", ln=True, align='C')
+        pdf.cell(0, 10, f"Identifiant du patient: {user_cin}", ln=True, align='C')
+        pdf.ln(5)
+
+        # Image analysée
+        image_path = r.get('image_path', '')
+        if image_path and os.path.exists(image_path):
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, "Image analysee:", ln=True)
+            pdf.image(image_path, x=pdf.get_x(), y=pdf.get_y(), w=80)
+            pdf.ln(75)
+
+        pdf.ln(16)
+
+        if result_type == 'classification':
+            # Reconstruction du dict classification_results exactement comme lors de l'analyse
+            classification_results = {
+                'predicted_class_name': r.get('predicted_class', 'N/A'),
+                'confidence': float(r.get('confidence', 0)),
+                'prob_normal': float(r.get('prob_normal', 0)),
+                'prob_glaucoma': float(r.get('prob_glaucoma', 0)),
+            }
+            # Génération du rapport avec la même fonction que lors de l'analyse initiale
+            report_text = generate_classification_report(
+                classification_results,
+                r.get('image_id', 'Inconnu'),
+                operator_name=full_name,
+                patient_id=user_cin
+            )
+            report_text = remove_non_latin1(report_text)
+            pdf.set_font("Arial", '', 11)
+            for line in report_text.splitlines():
+                pdf.multi_cell(0, 8, line)
+        else:
+            # Segmentation — même structure que download_segmentation_pdf
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, "Metriques de segmentation:", ln=True)
+            pdf.set_font("Arial", '', 11)
+            metric_explanations = {
+                'IoU': "Mesure le chevauchement entre la zone predite et la zone reelle.",
+                'Dice': "Evalue la similarite entre l'image predite et la verite terrain.",
+                'Precision': "Proportion des pixels predits positifs qui sont corrects.",
+                'Rappel': "Capacite du modele a detecter tous les pixels reellement positifs.",
+                'Exactitude': "Pourcentage global de pixels correctement classes."
+            }
+            metrics_map = {
+                'iou': 'IoU',
+                'dice': 'Dice',
+                'precision_val': 'Precision',
+                'recall_val': 'Rappel',
+                'accuracy': 'Exactitude'
+            }
+            for col, label in metrics_map.items():
+                val = r.get(col)
+                if val is not None:
+                    explanation = metric_explanations.get(label, "")
+                    pdf.set_font("Arial", 'B', 11)
+                    pdf.cell(50, 10, f"{label}: {float(val)*100:.2f}%", ln=0)
+                    pdf.set_font("Arial", '', 10)
+                    pdf.multi_cell(0, 10, explanation)
+                    pdf.ln(2)
+            # Image segmentée
+            result_path = r.get('result_path', '')
+            if result_path and os.path.exists(result_path):
+                pdf.ln(5)
+                pdf.set_font("Arial", 'B', 12)
+                pdf.cell(0, 10, "Image segmentee:", ln=True)
+                pdf.image(result_path, x=pdf.get_x(), y=pdf.get_y(), w=80)
+                pdf.ln(90)
+
+        pdf_bytes = pdf.output(dest='S').encode('latin1')
+        download_name = f"rapport_{result_type}_{result_id}.pdf"
+        return send_file(
+            io.BytesIO(pdf_bytes),
+            as_attachment=True,
+            download_name=download_name,
+            mimetype="application/pdf"
+        )
+    except Exception as e:
+        flash(f'Erreur génération PDF: {str(e)}', 'danger')
+        return redirect(url_for('user_dashboard'))
+    finally:
+        cursor.close()
+        connection.close()
+# ---------------------------------------------------------------
+# ROUTE : Page HTML des statistiques descriptives (Admin)
+# ---------------------------------------------------------------
+
+@app.route('/admin/statistiques_page')
+def admin_statistiques_page():
+    """Affiche la page HTML des statistiques descriptives (Gestion des statistiques)."""
+    if not session.get('is_admin'):
+        flash('Accès non autorisé', 'danger')
+        return redirect(url_for('login'))
+    return render_template('admin/admin_statistiques.html')
+
+# ---------------------------------------------------------------
+# ROUTE : Statistiques personnelles de l'utilisateur (pour diagramme)
+# ---------------------------------------------------------------
+
+@app.route('/user/mes_stats')
+def user_mes_stats():
+    """Retourne les statistiques de résultats de l'utilisateur courant."""
+    if not session.get('logged_in'):
+        return jsonify({'error': 'Unauthorized'}), 403
+    uid = session['user_id']
+    connection = create_connection()
+    cursor = connection.cursor(dictionary=True)
+    try:
+        # Tous les résultats soumis à l'admin (soumis_admin = 1)
+        # En attente
+        cursor.execute("""
+            SELECT COUNT(*) AS n FROM results_classification
+            WHERE user_id = %s AND soumis_admin = 1 AND statut = 'en_attente'
+        """, (uid,))
+        en_attente_cls = cursor.fetchone()['n']
+        cursor.execute("""
+            SELECT COUNT(*) AS n FROM results_segmentation
+            WHERE user_id = %s AND soumis_admin = 1 AND statut = 'en_attente'
+        """, (uid,))
+        en_attente_seg = cursor.fetchone()['n']
+
+        # Approuvés (soumis_admin = 1)
+        cursor.execute("""
+            SELECT COUNT(*) AS n FROM results_classification
+            WHERE user_id = %s AND soumis_admin = 1 AND statut IN ('approuve', 'telecharge')
+        """, (uid,))
+        approuves_cls = cursor.fetchone()['n']
+        cursor.execute("""
+            SELECT COUNT(*) AS n FROM results_segmentation
+            WHERE user_id = %s AND soumis_admin = 1 AND statut IN ('approuve', 'telecharge')
+        """, (uid,))
+        approuves_seg = cursor.fetchone()['n']
+
+        # Refusés (soumis_admin = 1)
+        cursor.execute("""
+            SELECT COUNT(*) AS n FROM results_classification
+            WHERE user_id = %s AND soumis_admin = 1 AND statut = 'refuse'
+        """, (uid,))
+        refuses_cls = cursor.fetchone()['n']
+        cursor.execute("""
+            SELECT COUNT(*) AS n FROM results_segmentation
+            WHERE user_id = %s AND soumis_admin = 1 AND statut = 'refuse'
+        """, (uid,))
+        refuses_seg = cursor.fetchone()['n']
+
+        en_attente = en_attente_cls + en_attente_seg
+        approuves  = approuves_cls  + approuves_seg
+        refuses    = refuses_cls    + refuses_seg
+        total      = en_attente + approuves + refuses
+
+        def pct(n): return round(n / total * 100, 1) if total else 0
+
+        return jsonify({
+            'en_attente': en_attente,
+            'approuves':  approuves,
+            'refuses':    refuses,
+            'total':      total,
+            'pct_attente':  pct(en_attente),
+            'pct_approuves': pct(approuves),
+            'pct_refuses':  pct(refuses),
+        })
+    finally:
+        cursor.close()
+        connection.close()
+
+
 
 # ---------------------------------------------------------------
 # EXÉCUTION DE L'APPLICATION

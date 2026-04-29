@@ -3,13 +3,14 @@
     --secondary-color: #3498db;
     --background-color: #f8f9fa;
 }
+
 body::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none; 
 }
 body,
 html {
   scroll-behavior: smooth;
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none; 
   -ms-overflow-style: none;
 }
 .main-content::-webkit-scrollbar {
@@ -19,36 +20,40 @@ html {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
- 
+
+/* ===================================================
+   LAYOUT PRINCIPAL
+   =================================================== */
+
 .main-container {
     padding: 0;
     margin: 0;
     min-height: 100vh;
     background-color: var(--background-color);
+    /* FIX: display flex pour que sidebar + contenu soient côte à côte */
+    display: flex;
 }
 
-/* Vue de traitement */
-.processing-view {
-    display: grid;
-    grid-template-columns: 250px 1fr;
-    gap: 0;
-    margin: 0;
-    width: 100vw;
-    height: 100vh;
-}
+/* ===================================================
+   SIDEBAR — fixe sur toute la hauteur
+   =================================================== */
 
 .sidebar {
     background: white;
     padding: 20px 20px;
     border-radius: 0;
     box-shadow: 4px 0 8px rgba(0, 0, 0, 0.1);
-    height: 100%;
+    width: 250px;
+    min-width: 250px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
     display: flex;
     align-items: center; 
     justify-content: start;
     flex-direction: column;
-    position: relative;
     z-index: 2;
+    flex-shrink: 0;
 }
 
 .sidebar h3 {
@@ -62,6 +67,7 @@ html {
     flex-direction: column;
     gap: 15px;
     flex-grow: 1;
+    width: 100%;
 }
 
 .sidebar-btn {
@@ -78,10 +84,9 @@ html {
     font-weight: 500;
     color: #666;
     text-decoration: none;
-    width: 100%; /* Make button fill sidebar width */
-    gap: 10px;   /* Space between text and icon */
+    width: 100%; 
+    gap: 10px;   
 }
-
 
 .sidebar-btn .sidebar-icon {
     width: 28px !important;
@@ -90,7 +95,7 @@ html {
     vertical-align: middle;
 }
 
-.sidebar img{
+.sidebar img {
     margin-top: 20px;
     margin-bottom: 35px;
     margin-right: 10px;
@@ -106,106 +111,10 @@ html {
   box-shadow: 0 1px 0 rgba(0,0,0,0.03);
 }
 
-
 .sidebar-btn.active {
     background-color: var(--secondary-color);
     color: white;
 }
-
-.logout-btn {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    padding: 12px;
-    border: none;
-    border-radius: 8px;
-    background: none;
-    text-align: left;
-    cursor: pointer;
-    font-weight: 500;
-    background-color: #e74c3c;
-    color: white;
-    gap: 10px;
-    transition: background-color 0.2s ease;
-}
-
-.logout-icon {
-    width: 22px !important;
-    height: 22px !important;
-    margin: 0 !important;
-    vertical-align: middle;
-    flex-shrink: 0;
-}
-
-.logout-btn:hover {
-    background-color: #c0392b;
-}
-
-.profile-container {
-    margin-top: auto;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
-}
-
-.profile-btn {
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: background-color 0.2s ease;
-    margin-bottom: 10px;
-}
-
-
-.profile-pic {
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    background-color: #3498db;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 10px;
-    font-size: 1.2em;
-}
-
-.profile-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.profile-info span {
-    font-weight: 500;
-    font-size: 0.9em;
-}
-
-.profile-info small {
-    color: #666;
-    font-size: 0.8em;
-}
-
-.logout-btn {
-    margin-top: 0;
-}
-
-.profile-btn.active {
-    background-color: #f0f0f0;
-    border-left: 3px solid var(--secondary-color);
-}
-
-.profile-btn.active .profile-pic {
-    background-color: var(--secondary-color);
-}
-
-.profile-btn:hover {
-    background-color: #f0f0f0;
-    transform: translateX(3px);
-    transition: all 0.2s ease;
-}
-
 
 .sidebar-btn:hover {
     transform: translateX(5px);
@@ -214,28 +123,56 @@ html {
     color: black;
 }
 
+/* ===================================================
+   ZONE DE CONTENU DROITE
+   =================================================== */
 
+/* FIX: .processing-view, #mesResultatsSection et #adaptationSection
+   sont tous dans .main-container. On utilise flex sur .main-container
+   pour que la sidebar reste à gauche et les vues à droite. */
 
+.processing-view {
+    flex: 1;
+    display: flex;          /* FIX: flex au lieu de grid */
+    flex-direction: column;
+    min-height: 100vh;
+    overflow-y: auto;
+    background: #f5f6fa;
+}
 
-/* Contenu principal */
+/* FIX: les sections mes-resultats et adaptation prennent
+   toute la place à droite de la sidebar */
+#mesResultatsSection,
+#adaptationSection {
+    flex: 1;
+    min-height: 100vh;
+    overflow-y: auto;
+    background: #f5f6fa;
+    padding: 25px 40px;
+    box-sizing: border-box;
+}
+
 .main-content {
-    /*background: #f9fafb;*/
+    flex: 1;
     background: #f5f6fa;
     padding: 25px 40px;
     border-radius: 0 10px 10px 0;
     box-shadow: -2px 0 4px rgba(0,0,0,0.1);
     overflow-y: auto;
-    margin-left: 0;
     position: relative;
     z-index: 1;
+    box-sizing: border-box;
 }
+
+/* ===================================================
+   ÉTAPES
+   =================================================== */
 
 .step-progress {
     display: flex;
     align-items: center;
     justify-content: center;
     background: #fff;
-    /* border: 1px solid #e0e0e0; */
     border-radius: 16px;
     border: 1px solid #e0e0e0;
     box-shadow: 0 4px 16px rgba(44, 62, 80, 0.08);
@@ -275,6 +212,7 @@ html {
     color: #6c63ff;
     margin: 0 10px;
 }
+
 .step.active .step-number {
     background: #6c63ff;
     color: #fff;
@@ -285,10 +223,12 @@ html {
     font-weight: bold;
 }
 
+/* ===================================================
+   SÉLECTION MODÈLE
+   =================================================== */
 
 .model-selection-wrapper {
     background: #fff;
-    /*border: 1px solid #e0e0e0;*/
     box-shadow: 0 4px 16px rgba(44, 62, 80, 0.08);
     border: 1px solid #e0e0e0;
     border-radius: 16px;
@@ -316,7 +256,6 @@ html {
 .model-dropdown {
     width: 100%;
     padding: 12px;
-    /* border: 2px solid #eee; */
     border: 1px solid #e0e0e0;
     border-radius: 16px;
     font-size: 1em;
@@ -335,7 +274,6 @@ html {
     padding-right: 12px;
     padding-top: 4px;
     padding-bottom: 4px;
-    /* border: 2px solid #eee; */
     border: 1px solid #e0e0e0;
     border-radius: 16px;
     cursor: pointer;
@@ -348,7 +286,9 @@ html {
   box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
 }
 
-/* upload des images */
+/* ===================================================
+   UPLOAD
+   =================================================== */
 
 .upload-grid {
     width: 100%;
@@ -365,14 +305,12 @@ html {
     justify-content: flex-start;
     height: 380px;
     background: #fff;
-    /* border: 1px solid #e0e0e0; */
     border: 1px solid #e0e0e0;
     padding: 20px;
     border-radius: 16px;
     box-shadow: 0 4px 16px rgba(44, 62, 80, 0.08);
     text-align: center;
     margin-top: 10px;
-
 }
 
 .upload-title {
@@ -382,11 +320,9 @@ html {
     margin-bottom: 10px;
 }
 
-
 .image-upload-box {
     flex: 1 1 auto;
     min-height: 0;
-    margin-bottom: 0; 
     border: 2px dashed #ccc;
     border-radius: 10px;
     height: 300px;
@@ -419,7 +355,7 @@ html {
     font-size: 1.1em;
     margin-top: 15px;
 }
-/* la vérité terrain */
+
 #gtDropZone {
     border-color: #ccc;
     background-color: white;
@@ -428,7 +364,7 @@ html {
 #gtDropZone:hover {
     border-color: #27ae60;
 }
-/* Ajouter ces styles */
+
 .hidden {
     display: none !important;
 }
@@ -453,17 +389,12 @@ html {
 #gtUploadSection {
     width: 100%;
     margin-top: 10px;
-}
-
-#gtUploadSection {
     display: block;
 }
 
-@media (max-width: 768px) {
-    #gtUploadSection {
-        display: block;
-    }
-}
+/* ===================================================
+   BOUTON TRAITEMENT
+   =================================================== */
 
 .process-btn {
     width: 100%;
@@ -478,32 +409,28 @@ html {
     position: relative;
 }
 
-
 .process-btn:hover {
     background-color: rgb(161, 45, 238);
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(114, 92, 241, 0.4);
 }
 
-
 .process-btn:disabled {
     background-color: #95a5a6;
     cursor: not-allowed;
 }
 
-/* Résultats */
+/* ===================================================
+   RÉSULTATS
+   =================================================== */
+
 .results-section {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 30px;
     margin-top: 40px;
 }
-/*ffffffffffff
-.results-section, 
-.metrics-section {
-    display: none !important;
-}
-*/
+
 .result-container {
     background: #f8f9fa;
     padding: 20px;
@@ -529,7 +456,6 @@ html {
     margin: 0 auto;
 }
 
-/* États */
 .dragover {
     border-color: var(--secondary-color) !important;
     background-color: #f8f9fa;
@@ -540,11 +466,16 @@ html {
     background-color: #e8f6ee;
     animation: flashBorder 3.5s ease-in-out;
 }
+
 @keyframes flashBorder {
-    0% { box-shadow: 0 0 0px #2ecc71; }
-    50% { box-shadow: 0 0 10px #2ecc71; }
+    0%   { box-shadow: 0 0 0px #2ecc71; }
+    50%  { box-shadow: 0 0 10px #2ecc71; }
     100% { box-shadow: 0 0 0px #2ecc71; }
 }
+
+/* ===================================================
+   SPINNER
+   =================================================== */
 
 .loading-spinner {
     animation: spin 1s linear infinite;
@@ -562,42 +493,14 @@ html {
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
+    0%   { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .processing-view {
-        grid-template-columns: 1fr;
-        height: auto;
-        width: 100%;
-    }
-    
-    .sidebar {
-        margin-bottom: 0;
-        height: auto;
-        border-radius: 0;
-        box-shadow: none;
-    }
-    
-    .main-content {
-        border-radius: 0;
-        box-shadow: none;
-        padding: 25px;
-    }
-    
-    .results-section {
-        grid-template-columns: 1fr;
-    }
+/* ===================================================
+   MÉTRIQUES
+   =================================================== */
 
-    .model-selection {
-        flex-direction: column;
-    }
-}
-
-
-/* Metrics section */
 .metrics-section {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -646,6 +549,7 @@ html {
     color: var(--primary-color);
     font-weight: 600;
 }
+
 #downloadResultsBtn {
     display: none;
     margin-top: 15px;
@@ -654,4 +558,208 @@ html {
 #downloadSegmentationBtn {
     display: none;
     margin-top: 15px;
+}
+
+/* ===================================================
+   ADAPTATION
+   =================================================== */
+
+.adaptation-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    padding: 20px;
+}
+
+.adaptation-step h3 {
+    color: var(--primary-color);
+    font-size: 1.4em;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.step-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.upload-area {
+    border: 2px dashed #cbd5e0;
+    border-radius: 10px;
+    padding: 30px;
+    width: 100%;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.upload-area:hover {
+    border-color: var(--secondary-color);
+    background: #f0f7ff;
+}
+
+.btn-action {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 200px;
+}
+
+.btn-action.success {
+    background: #27ae60;
+}
+
+.btn-outline {
+    border: 1px solid var(--primary-color);
+    background: transparent;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* ===================================================
+   PROFIL / DÉCONNEXION
+   =================================================== */
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background-color: #e74c3c;
+    color: white;
+    gap: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    margin-top: 0;
+    transition: background-color 0.2s ease;
+}
+
+.logout-btn:hover {
+    background-color: #c0392b;
+}
+
+.logout-icon {
+    width: 22px !important;
+    height: 22px !important;
+    margin: 0 !important;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+.profile-container {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    width: 100%;
+}
+
+.profile-btn {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+    margin-bottom: 10px;
+}
+
+.profile-pic {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background-color: #3498db;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+    font-size: 1.2em;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-info span {
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+.profile-info small {
+    color: #666;
+    font-size: 0.8em;
+}
+
+.profile-btn.active {
+    background-color: #f0f0f0;
+    border-left: 3px solid var(--secondary-color);
+}
+
+.profile-btn.active .profile-pic {
+    background-color: var(--secondary-color);
+}
+
+.profile-btn:hover {
+    background-color: #f0f0f0;
+    transform: translateX(3px);
+    transition: all 0.2s ease;
+}
+
+/* ===================================================
+   RESPONSIVE
+   =================================================== */
+
+@media (max-width: 768px) {
+    .main-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        min-width: unset;
+        height: auto;
+        position: relative;
+        box-shadow: none;
+    }
+
+    .processing-view,
+    #mesResultatsSection,
+    #adaptationSection {
+        min-height: auto;
+        padding: 20px;
+    }
+
+    .main-content {
+        border-radius: 0;
+        box-shadow: none;
+        padding: 25px;
+    }
+
+    .results-section {
+        grid-template-columns: 1fr;
+    }
+
+    .model-selection {
+        flex-direction: column;
+    }
+
+    .metrics-section {
+        grid-template-columns: 1fr;
+    }
 }
