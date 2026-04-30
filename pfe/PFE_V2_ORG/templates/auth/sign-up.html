@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ _('Inscription - Espace personnel') }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sign-up.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Jura:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Calistoga&display=swap" rel="stylesheet">
+</head>
+<body>
+    <a href="{{ url_for('home') }}">
+        <img src="{{ url_for('static', filename='assets/home_button.png') }}" alt="{{ _('Icon') }}" class="top-left-icon">
+    </a>
+    <div class="container">
+        <div class="left-section">
+            <h1>{{ _('Explorez') }} <br> {{ _('la segmentation avancée') }}</h1>
+            <img src="{{ url_for('static', filename='assets/sign-upSvg.svg') }}" alt="{{ _('Illustration') }}">
+        </div>
+        <div class="right-section">
+            <div class="flash-messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+            <h2>{{ _("S'inscrire") }}</h2>
+            <form action="{{ url_for('signup') }}" method="post">
+			    <div class="name-fields">
+			        <input type="text" name="first_name" placeholder="{{ _('Prenom') }}" required>
+			        <input type="text" name="last_name" placeholder="{{ _('Nom') }}" required>
+			    </div>
+                <input type="text" name="cin" placeholder="{{ _('CIN') }}" required>
+                <div class="date-field">
+    <input type="date" id="date_of_birth_native" name="date_of_birth" class="native-date-input" required>
+
+    <div class="mobile-date-wrapper">
+        <input
+            type="text"
+            id="date_of_birth_mobile"
+            class="mobile-date-input"
+            placeholder="jj/mm/aaaa"
+            inputmode="numeric"
+            maxlength="10"
+            autocomplete="off"
+        >
+        <button type="button" class="mobile-date-btn" id="openDatePicker" aria-label="Ouvrir le calendrier">
+            <i class="fa-regular fa-calendar"></i>
+        </button>
+    </div>
+</div>
+			    <input type="text" name="email" placeholder="{{ _('Email') }}" required>
+                <div class="password-container">
+                    <input type="password" id="password" name="password" placeholder="{{ _('Mot de passe') }}" required>
+                    <i class="fa-solid fa-eye toggle-password" onclick="togglePasswordVisibility()"></i>
+                </div>
+			    <button type="submit">{{ _("S'inscrire") }}</button>
+			</form>
+            <p><a href="{{ url_for('login') }}">{{ _("Vous avez deja un compte ?") }}</a></p>
+        </div>
+    </div>
+
+
+<script>
+    //script for show/hide password
+function togglePasswordVisibility() {
+    const passwordInput = document.getElementById('password');
+    const toggleIcon = document.querySelector('.toggle-password');
+    const isPassword = passwordInput.type === 'password';
+    
+    passwordInput.type = isPassword ? 'text' : 'password';
+    toggleIcon.classList.toggle('fa-eye');
+    toggleIcon.classList.toggle('fa-eye-slash');
+}
+</script>
+
+<script>
+    // Auto-hide flash messages after 2 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        const flashMessages = document.querySelectorAll('.alert');
+        flashMessages.forEach(message => {
+            setTimeout(() => {
+                message.style.opacity = '0';
+                setTimeout(() => message.remove(), 500); // Remove after fade out completes
+            }, 2000); // 2 seconds
+        });
+    });
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const nativeInput = document.getElementById('date_of_birth_native');
+    const mobileInput = document.getElementById('date_of_birth_mobile');
+    const openBtn = document.getElementById('openDatePicker');
+    const form = nativeInput.closest('form');
+
+    function isMobileMode() {
+        return window.matchMedia('(max-width: 768px)').matches;
+    }
+
+    function formatMobileDate(value) {
+        const digits = value.replace(/\D/g, '').slice(0, 8);
+        let result = digits;
+
+        if (digits.length > 2) {
+            result = digits.slice(0, 2) + '/' + digits.slice(2);
+        }
+        if (digits.length > 4) {
+            result = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+        }
+
+        return result;
+    }
+
+    function mobileToIso(text) {
+        const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (!match) return '';
+
+        const day = parseInt(match[1], 10);
+        const month = parseInt(match[2], 10);
+        const year = parseInt(match[3], 10);
+
+        const testDate = new Date(year, month - 1, day);
+
+        if (
+            testDate.getFullYear() !== year ||
+            testDate.getMonth() !== month - 1 ||
+            testDate.getDate() !== day
+        ) {
+            return '';
+        }
+
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+
+    function isoToMobile(iso) {
+        const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!match) return '';
+        return `${match[3]}/${match[2]}/${match[1]}`;
+    }
+
+    function applyDateMode() {
+        if (isMobileMode()) {
+            nativeInput.required = false;
+            mobileInput.required = true;
+
+            if (nativeInput.value && !mobileInput.value) {
+                mobileInput.value = isoToMobile(nativeInput.value);
+            }
+        } else {
+            nativeInput.required = true;
+            mobileInput.required = false;
+
+            if (mobileInput.value) {
+                const iso = mobileToIso(mobileInput.value);
+                if (iso) {
+                    nativeInput.value = iso;
+                }
+            }
+        }
+    }
+
+    mobileInput.addEventListener('input', function () {
+        mobileInput.value = formatMobileDate(mobileInput.value);
+
+        const iso = mobileToIso(mobileInput.value);
+        if (iso) {
+            nativeInput.value = iso;
+        } else {
+            nativeInput.value = '';
+        }
+    });
+
+    nativeInput.addEventListener('change', function () {
+        mobileInput.value = isoToMobile(nativeInput.value);
+    });
+
+    openBtn.addEventListener('click', function () {
+        if (!isMobileMode()) return;
+
+        if (typeof nativeInput.showPicker === 'function') {
+            nativeInput.showPicker();
+        } else {
+            nativeInput.focus();
+            nativeInput.click();
+        }
+    });
+
+    form.addEventListener('submit', function (e) {
+        if (isMobileMode()) {
+            const iso = mobileToIso(mobileInput.value.trim());
+
+            if (!iso) {
+                e.preventDefault();
+                mobileInput.focus();
+                alert('Veuillez entrer la date au format jj/mm/aaaa');
+                return;
+            }
+
+            nativeInput.value = iso;
+        }
+    });
+
+    window.addEventListener('resize', applyDateMode);
+    applyDateMode();
+});
+</script>
+
+</body>
+</html>

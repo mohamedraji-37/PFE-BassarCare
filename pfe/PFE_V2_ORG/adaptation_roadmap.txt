@@ -1,0 +1,229 @@
+Roadmap complète de la fonctionnalité adaptation
+
+1) Cahier des charges / fonctionnement global
+- Objectif : permettre à l’utilisateur de lancer une adaptation / entraînement de modèle sur ses propres données rétiniennes.
+- Entrées :
+  - dataset ZIP structuré (train/ + test/, ou classes à la racine)
+  - type de tâche : classification ou segmentation
+  - hyperparamètres : epochs, learning rate, batch size
+  - nom du modèle adapté
+  - modèle de base optionnel (upload .pth/.pt ou sélection d’un modèle existant)
+- Sorties :
+  - modèle adapté sauvegardé en .pth
+  - progression en temps réel
+  - historique local
+  - possibilité d’annuler le job
+
+2) Frontend : interface utilisateur
+Fichiers principaux :
+- templates/user/dashboard.html
+- static/css/user-dashboard.css
+- static/js/user-dashboard.js
+
+Étapes :
+1. Ajouter une vue d’adaptation dans le dashboard
+   - bouton Adaptation dans la sidebar
+   - zone principale .adapt-view masquée par défaut
+
+2. Créer le formulaire d’adaptation
+   - sélection de modèle de base
+   - upload d’un fichier .pth/.pt
+   - bascule classification / segmentation
+   - sliders pour epochs, lr, batch size
+   - champ texte Nom du modele adapte
+   - upload dataset ZIP avec drag & drop
+
+3. Afficher la structure attendue du dataset
+   - ajustée selon le type de tâche :
+     - classification : train/glaucoma, train/normal, test/...
+     - segmentation : train/images, train/masks, test/images, test/masks
+
+4. Ajouter un workflow visuel
+   - bouton Lancer adaptation
+   - bouton Réinitialiser
+   - bouton Arrêter adaptation
+   - barre de progression + message d’état
+   - panneau résultat + graphique des courbes
+   - historique des adaptations dans la même vue
+
+3) Frontend : comportement JavaScript
+Fichier principal :
+- static/js/user-dashboard.js
+
+Étapes :
+1. Initialisation de l’état d’adaptation
+   - adaptState : fichier ZIP, task, base model, historique, job actif
+
+2. Gestion de l’affichage
+   - showAdaptationView()
+   - selectAdaptTask(task)
+   - updateAdaptStructureHint(task)
+
+3. Gestion du dataset ZIP
+   - handleAdaptFileSelect(input)
+   - handleAdaptDrop(event)
+   - _setAdaptFile(file)
+   - resetAdaptFile()
+
+4. Gestion du modèle de base
+   - handleBaseModelFileSelect(input)
+   - resetBaseModelFile()
+
+5. Lancement du job
+   - launchAdaptation()
+   - création de FormData
+   - envoi POST à /adapt_model
+   - stockage job_id et modelName
+
+6. Polling du backend
+   - _pollAdaptationJob(jobId, modelName) toutes les 2 secondes
+   - lecture de /adapt_model_status/<job_id>
+   - update de la barre de progression et du message
+
+7. Annulation
+   - cancelAdaptation()
+   - appel POST sur /adapt_model_cancel/<job_id>
+   - mise à jour de l’état local et de l’UI
+
+8. Résultat / historique
+   - _finishAdaptation()
+   - affichage du succès / erreur
+   - rendu de graphiques via Chart.js
+   - sauvegarde historique dans localStorage
+   - affichage des tâches passées et relance éventuelle
+
+4) Backend : API Flask
+Fichier principal :
+- app.py
+
+Routes liées :
+- POST /adapt_model
+- GET /adapt_model_status/<job_id>
+- POST /adapt_model_cancel/<job_id>
+- GET /download-adapted-model (déjà mentionnée dans le projet)
+
+Étapes backend :
+1. Réception de la requête POST /adapt_model
+   - récupération de dataset, base_model_file, task, model_name, epochs, lr, batch_size
+   - génération d’un job_id
+   - création d’un répertoire temporaire tmp/adapt_requests/<job_id>
+   - sauvegarde des fichiers uploadés
+
+2. Gestion asynchrone
+   - ADAPT_JOBS dictionnaire global
+   - ADAPT_JOBS_LOCK pour synchronisation
+   - démarrage d’un thread daemon qui exécute run_adaptation(...)
+
+3. Statut de job
+   - adapt_model_status(job_id) retourne :
+     - done
+     - progress
+     - message
+     - result_success
+     - canceled
+     - history
+     - model_path
+
+4. Annulation de job
+   - adapt_model_cancel(job_id) marque cancel_requested
+   - run_adaptation() vérifie fréquemment cette demande
+
+5. Nettoyage
+   - suppression du dossier temporaire après exécution
+   - mise à jour finale du job dans ADAPT_JOBS
+
+5) Backend : pipeline d’adaptation
+Fichier principal :
+- adapt_model.py
+
+Étapes détaillées :
+1. Préparation du workspace
+   - work_dir = tmp/adapt/<job_id>
+   - création du dossier
+
+2. Extraction du ZIP
+   - zipfile.ZipFile(...).extractall(extract_dir)
+
+3. Analyse de la structure du dataset
+   - _find_splits(root) :
+     - cas train/ + test/
+     - cas sous-dossier contenant train/ + test/
+     - cas Training_Set / Validation_Set
+     - cas classes à la racine → split automatique 70/30
+     - sinon erreur
+
+4. Chargement des données
+   - classification :
+     - torchvision.datasets.ImageFolder
+     - transforms avec resize, flip, rotation, normalisation
+   - segmentation :
+     - SegmentationPairsDataset
+     - paire image/mask détectée par stem
+     - augmentations simples + resize
+
+5. Construction du modèle
+   - task == 'segmentation' → build_unet() ou _SimpleUNet
+   - sinon classification → _SimpleCNN(num_classes)
+
+6. Option de modèle de base
+   - _load_base_weights_if_provided(model, base_model_file, work_dir, device)
+   - accepte checkpoint .pth/.pt
+   - accepte dict simple ou dict contenant state_dict
+
+7. Optimiseur et loss
+   - classification : CrossEntropyLoss
+   - segmentation : BCEWithLogitsLoss
+   - optimiser Adam
+   - scheduler StepLR
+
+8. Entraînement et validation
+   - boucle for epoch in range(nb_epochs)
+   - calcul des métriques :
+     - classification : accuracy
+     - segmentation : dice, iou
+   - sauvegarde du meilleur état best_state
+   - mise à jour du message/progress pour le frontend
+
+9. Sauvegarde finale
+   - torch.save(...) dans static/models/<model_name>.pth
+   - stockage de metadata :
+     - state_dict
+     - num_classes
+     - task
+     - accuracy
+     - history
+
+10. Retour au frontend
+   - run_adaptation() retourne (success, message, model_path, history)
+
+6) Organisation des fichiers et flux complet
+- Frontend HTML : templates/user/dashboard.html
+- CSS / styles : static/css/user-dashboard.css
+- JS / interaction : static/js/user-dashboard.js
+- Backend Flask : app.py
+- Entraînement / adaptation : adapt_model.py
+- Stockage modèles : static/models
+- Temporaire : tmp/adapt_requests/<job_id> et tmp/adapt/<job_id>
+
+7) Roadmap chronologique de A à Z
+1. Définir l’UI et les cas d’usage
+2. Créer la vue adaptation dans dashboard.html
+3. Ajouter les contrôles upload, hyperparamètres, sélection de tâche
+4. Styliser la vue dans user-dashboard.css
+5. Implémenter le state JS et la validation du formulaire
+6. Implémenter launchAdaptation() et l’envoi POST /adapt_model
+7. Créer adapt_model dans app.py + gestion thread/job
+8. Écrire run_adaptation() dans adapt_model.py
+9. Gérer extraction ZIP et reconnaissance de structure
+10. Gérer classification et segmentation séparément
+11. Ajouter suivi de progression et adapt_model_status
+12. Ajouter annulation avec adapt_model_cancel
+13. Ajouter affichage de résultat, charts et historique local
+14. Tester le flux complet avec dataset ZIP
+15. Vérifier téléchargement du .pth et nettoyage des temporaires
+
+8) Points importants à surveiller
+- Le dataset ZIP doit respecter la structure attendue, sinon _find_splits() tente un split automatique.
+- Le job tourne en thread; si le serveur est redémarré, le suivi du job est perdu.
+- L’historique côté frontend est stocké dans localStorage, donc local au navigateur.
+- Le téléchargement du modèle est géré par une route backend séparée (download-adapted-model).
