@@ -87,6 +87,21 @@ def initialize_database():
         """)
         print("✓ Table 'users' créée avec succès")
 
+        print("Création de la table 'adaptation_dataset'...")
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS adaptation_dataset (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                image_path VARCHAR(255) NOT NULL,
+                label VARCHAR(255) NOT NULL,
+                added_by INT NOT NULL,
+                source_result_id INT NOT NULL,
+                result_type ENUM('classification', 'segmentation') NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (added_by) REFERENCES users(id)
+            )
+        """)
+        print("✓ Table 'adaptation_dataset' créée avec succès")
+
         connection.commit()
         print("✓ Tous les changements ont été validés dans la base de données")
 

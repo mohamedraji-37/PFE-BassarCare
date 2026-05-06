@@ -1119,7 +1119,15 @@ function showMesResultats() {
                             <span style="color:#78716c;font-size:0.78rem;">📅 {{ r.created_at.strftime("%d/%m/%Y %H:%M") if r.created_at else "" }}</span>
                         </div>
                     </div>
-                    <span style="background:#fef3c7;color:#b45309;border-radius:8px;padding:0.4rem 1rem;font-size:0.82rem;font-weight:700;white-space:nowrap;">⏳ {{ _("En attente") }}</span>
+                    <span style="background:#fef3c7;color:#b45309;border-radius:8px;padding:0.4rem 1rem;font-size:0.82rem;font-weight:700;white-space:nowrap;">⏳ {{ _('En attente') }}</span>
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.9rem;">
+                        <form method="POST" action="{{ url_for('user_add_to_dataset') }}" style="display:inline;">
+                            <input type="hidden" name="result_id" value="{{ r.id }}">
+                            <button type="submit" style="background:#4338ca;color:white;border:none;border-radius:10px;padding:0.6rem 1rem;font-weight:700;cursor:pointer;">
+                                🗄 {{ _('Ajouter au dataset') }}
+                            </button>
+                        </form>
+                    </div>
                 </div>
                 {% endfor %}
             </div>

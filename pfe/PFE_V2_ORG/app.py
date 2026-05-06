@@ -1262,6 +1262,56 @@ def user_dashboard():
                          user_cin=user['cin'] if user else '',
                          resultats_en_attente=resultats_en_attente)
 
+@app.route('/user/add-to-dataset', methods=['POST'])
+def user_add_to_dataset():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+
+    result_id = request.form.get('result_id')
+    connection = create_connection()
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT id, image_id, image_path, predicted_class AS label, 'classification' AS result_type
+            FROM results_classification
+            WHERE id = %s AND user_id = %s
+            UNION ALL
+            SELECT id, image_id, image_path, NULL AS label, 'segmentation' AS result_type
+            FROM results_segmentation
+            WHERE id = %s AND user_id = %s
+        """, (result_id, session['user_id'], result_id, session['user_id']))
+        result = cursor.fetchone()
+        if not result:
+            flash('Résultat non trouvé ou non autorisé.', 'danger')
+            return redirect(url_for('user_dashboard', mode='classification'))
+
+        label = result.get('label') or result.get('image_id')
+        image_path = result.get('image_path') or result.get('image_id')
+        cursor.execute("""
+            INSERT INTO adaptation_dataset
+            (image_path, label, added_by, source_result_id, result_type, created_at)
+            VALUES (%s, %s, %s, %s, %s, NOW())
+        """, (
+            image_path,
+            label,
+            session['user_id'],
+            result['id'],
+            result['result_type']
+        ))
+        connection.commit()
+        flash('Image ajoutée au dataset d\'adaptation avec succès.', 'success')
+    except mysql.connector.Error as e:
+        if connection and connection.is_connected():
+            connection.rollback()
+        flash(f"Erreur lors de l'ajout au dataset d'adaptation : {e}", 'danger')
+    finally:
+        if cursor:
+            cursor.close()
+        if connection and connection.is_connected():
+            connection.close()
+
+    return redirect(url_for('user_dashboard', mode='classification'))
+
 # page de profile d'utilisateur
 @app.route('/user/profile', methods=['GET', 'POST'])
 def user_profile():
