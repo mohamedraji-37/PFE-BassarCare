@@ -1104,7 +1104,7 @@ function showMesResultats() {
                 </h4>
                 {% for r in resultats_en_attente %}
                 <div id="carte-attente-{{ r.id }}-{{ r.result_type }}" style="background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:1.2rem 1.5rem;margin-bottom:0.8rem;display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;">
-                    <img src="{{ url_for('uploaded_file', filename=r.image_id) }}"
+                    <img src="{{ r.image_url or url_for('uploaded_file', filename=r.image_id) }}"
                          style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:2px solid #fde68a;flex-shrink:0;"
                          onerror="this.style.display='none'">
                     <div style="flex:1;min-width:180px;">

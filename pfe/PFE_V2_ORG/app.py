@@ -6,6 +6,7 @@ from functools import wraps
 import mysql.connector
 from mysql.connector import Error
 import torch
+from werkzeug.utils import secure_filename
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
@@ -39,9 +40,10 @@ app = Flask(__name__)
 app.secret_key = 'dev_key_temporaire'
 app.config['SESSION_TYPE'] = 'filesystem'
 # Dossier pour stocker les fichiers uploadés
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'uploads')
 # Taille maximale des fichiers uploadés (1GB)
 app.config['MAX_CONTENT_LENGTH'] = 1000 * 1024 * 1024
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Configuration Babel
 app.config['BABEL_DEFAULT_LOCALE'] = 'fr'
@@ -66,10 +68,11 @@ def inject_languages():
     }
 
 # Configuration des répertoires pour les modèles
-MODEL_BASE_DIR = "stored_models"
+MODEL_BASE_DIR = os.path.join(app.root_path, "stored_models")
 SEGMENTATION_DIR = os.path.join(MODEL_BASE_DIR, "segmentation")
 CLASSIFICATION_DIR = os.path.join(MODEL_BASE_DIR, "classification")
 
+os.makedirs(MODEL_BASE_DIR, exist_ok=True)
 os.makedirs(SEGMENTATION_DIR, exist_ok=True)
 os.makedirs(CLASSIFICATION_DIR, exist_ok=True)
 
@@ -213,7 +216,7 @@ def adapt_model():
         return jsonify({'success': False, 'message': 'Aucun fichier recu'})
 
     job_id = str(uuid.uuid4())
-    request_tmp_dir = os.path.join('tmp', 'adapt_requests', job_id)
+    request_tmp_dir = os.path.join(app.root_path, 'tmp', 'adapt_requests', job_id)
     os.makedirs(request_tmp_dir, exist_ok=True)
 
     dataset_path = os.path.join(request_tmp_dir, 'dataset.zip')
@@ -513,6 +516,13 @@ def admin_dashboard():
             ORDER BY created_at DESC
         """)
         resultats_en_attente = cursor.fetchall()
+        for res in resultats_en_attente:
+            image_path = res.get('image_path')
+            if image_path:
+                res['image_url'] = url_for('uploaded_file', filename=os.path.basename(image_path))
+                res['image_path'] = image_path.replace('\\', '/') if isinstance(image_path, str) else image_path
+            else:
+                res['image_url'] = url_for('uploaded_file', filename=res.get('image_id'))
         nb_en_attente = len(resultats_en_attente)
 
         # ── Statistiques descriptives ──────────────────────────
@@ -580,6 +590,20 @@ def admin_statistiques():
         for r in rows:
             if r.get('created_at'):
                 r['created_at'] = str(r['created_at'])[:16]
+            # Construire une URL d'accès pour l'image uploadée seulement si le fichier existe
+            image_path = r.get('image_path')
+            image_basename = None
+            if image_path:
+                image_basename = os.path.basename(image_path)
+            elif r.get('image_id'):
+                image_basename = r['image_id']
+            if image_basename:
+                filename = find_uploaded_filename(image_basename)
+                r['image_url'] = url_for('uploaded_file', filename=filename) if filename else None
+            else:
+                r['image_url'] = None
+            # Rendre le champ image_path plus sûr pour le client
+            r['image_path'] = image_path.replace('\\', '/') if isinstance(image_path, str) else image_path
         return jsonify({
             'total': total,
             'glaucome': glaucome,
@@ -596,6 +620,7 @@ def admin_statistiques():
 
 # Téléchargement de modèle par l'admin
 @app.route('/admin/upload_model', methods=['POST'])
+@app.route('/upload-model', methods=['POST'])
 def upload_model():
     # Vérification des privilèges
     if not session.get('is_admin'):
@@ -642,21 +667,30 @@ def upload_model():
         save_dir = os.path.join(MODEL_BASE_DIR, model_type)
         os.makedirs(save_dir, exist_ok=True)
 
+        original_filename = secure_filename(model_file.filename)
+        if not original_filename:
+            flash('Nom de fichier invalide', 'danger')
+            return redirect(url_for('admin_dashboard'))
+
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        filename = f"{timestamp}_{model_file.filename}"
+        filename = f"{timestamp}_{original_filename}"
         filepath = os.path.join(save_dir, filename)
         model_file.save(filepath)
+
+        if not os.path.exists(filepath):
+            flash('Erreur lors de la sauvegarde du fichier modèle', 'danger')
+            return redirect(url_for('admin_dashboard'))
 
         # Enregistrement en base de données
         connection = create_connection()
         cursor = connection.cursor()
-        relative_path = os.path.join(model_type, filename)
+        relative_path = os.path.normpath(os.path.join(model_type, filename))
         cursor.execute(
             "INSERT INTO models (model_name, model_type, model_format, model_path) VALUES (%s, %s, %s, %s)",
             (model_name, model_type, model_format, relative_path)
         )
         connection.commit()
-        
+
         flash(f'Model {model_name} uploaded successfully!', 'success')
 
     except Exception as e:
@@ -686,7 +720,7 @@ def delete_model(model_id):
         cursor.execute("DELETE FROM models WHERE id = %s", (model_id,))
         connection.commit()
         # Suppression physique du fichier
-        full_path = os.path.join(MODEL_BASE_DIR, model_path)
+        full_path = os.path.join(MODEL_BASE_DIR, os.path.normpath(model_path))
         if os.path.exists(full_path):
             os.remove(full_path)
             
@@ -744,7 +778,7 @@ def edit_model(model_id):
             new_file.save(filepath)
             
             # Update database with new path
-            relative_path = os.path.join(model_data['model_type'], filename)
+            relative_path = os.path.normpath(os.path.join(model_data['model_type'], filename))
             cursor.execute(
                 "UPDATE models SET model_name = %s, model_path = %s WHERE id = %s",
                 (new_name, relative_path, model_id)
@@ -1137,15 +1171,24 @@ def user_dashboard():
         # Résultats en attente (persistent entre sessions)
         cursor.execute("""
             SELECT id, image_id, 'classification' AS result_type,
-                   predicted_class, CAST(confidence AS DECIMAL(10,4)) AS confidence, statut, created_at
+                   predicted_class, CAST(confidence AS DECIMAL(10,4)) AS confidence, statut, created_at, image_path
             FROM results_classification WHERE statut = 'en_attente' AND user_id = %s
             UNION ALL
             SELECT id, image_id, 'segmentation' AS result_type,
-                   NULL AS predicted_class, CAST(NULL AS DECIMAL(10,4)) AS confidence, statut, created_at
+                   NULL AS predicted_class, CAST(NULL AS DECIMAL(10,4)) AS confidence, statut, created_at, image_path
             FROM results_segmentation WHERE statut = 'en_attente' AND user_id = %s
             ORDER BY created_at DESC
         """, (session['user_id'], session['user_id']))
         resultats_en_attente = cursor.fetchall()
+        for res in resultats_en_attente:
+            image_path = res.get('image_path')
+            if image_path:
+                filename = find_uploaded_filename(os.path.basename(image_path))
+                res['image_url'] = url_for('uploaded_file', filename=filename) if filename else None
+                res['image_path'] = image_path.replace('\\', '/') if isinstance(image_path, str) else image_path
+            else:
+                filename = find_uploaded_filename(res.get('image_id'))
+                res['image_url'] = url_for('uploaded_file', filename=filename) if filename else None
 
         # Note : les résultats approuvés/refusés ne sont PAS chargés au démarrage.
         # Ils apparaissent uniquement pendant la session via le polling JS (/user/check_approbations).
@@ -1565,7 +1608,7 @@ def get_model_from_db(model_id, connection_creator, model_base_dir):
             raise ValueError(f"❌ Model ID {model_id} not found in database")
         
         # 2. Validate model file existence
-        full_path = os.path.join(model_base_dir, result['model_path'])
+        full_path = os.path.join(model_base_dir, os.path.normpath(result['model_path']))
         if not os.path.exists(full_path):
             raise FileNotFoundError(f"🚨 Model file missing at {full_path}")
         
@@ -1671,6 +1714,22 @@ def save_uploaded_file(file):
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(filepath)
     return filename
+
+# Rechercher un fichier uploadé dans le dossier uploads, insensible à la casse
+def find_uploaded_filename(filename):
+    if not filename:
+        return None
+    candidate = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if os.path.exists(candidate):
+        return filename
+    lower_filename = filename.lower()
+    try:
+        for existing in os.listdir(app.config['UPLOAD_FOLDER']):
+            if existing.lower() == lower_filename:
+                return existing
+    except FileNotFoundError:
+        return None
+    return None
 
 # Prétraitement des images (identique à l'entraînement)
 def preprocess_image(image_path):
@@ -2214,7 +2273,7 @@ def get_classification_model_from_db_fixed(model_id, connection_creator, model_b
             raise ValueError(f"❌ Le modèle n'est pas un modèle de classification")
 
         # 2. Validation du fichier
-        full_path = os.path.join(model_base_dir, result['model_path'])
+        full_path = os.path.join(model_base_dir, os.path.normpath(result['model_path']))
         if not os.path.exists(full_path):
             raise FileNotFoundError(f"🚨 Fichier manquant: {full_path}")
 
@@ -2457,7 +2516,7 @@ def classify_image_debug():
         
         try:
             # Vérification de l'existence du fichier modèle
-            model_path = os.path.join(MODEL_BASE_DIR, model_info['model_path'])
+            model_path = os.path.join(MODEL_BASE_DIR, os.path.normpath(model_info['model_path']))
             logger.info(f"📍 Chemin du modèle: {model_path}")
             
             if not os.path.exists(model_path):
