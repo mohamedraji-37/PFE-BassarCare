@@ -26,10 +26,15 @@
                         {{ _('Segmentation') }}
                         <img src="{{ url_for('static', filename='assets/icon_segmentation.png') }}" alt="Segmentation" class="sidebar-icon">
                     </button>
-            <button class="sidebar-btn" data-type="adaptation" onclick="switchMode('adaptation')">
-             {{ _('Adaptation') }}
-                 <img src="{{ url_for('static', filename='assets/icon_adaptation.png') }}" class="sidebar-icon">
                      </button>
+                    <button class="sidebar-btn adapt-sidebar-btn" onclick="window.location.href='/user/dashboard?mode=adaptation'">
+                        {{ _('Adaptation') }}
+                        <svg class="sidebar-icon adapt-icon" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </button>
                     <div class="profile-container">
                         <div class="profile-btn active" onclick="window.location.href='/user/profile'">
                             <div class="profile-pic">👤</div> 

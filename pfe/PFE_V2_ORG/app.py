@@ -2,6 +2,7 @@
 from flask import Flask, jsonify, render_template, request, redirect, url_for, session, flash, send_from_directory, send_file
 from flask_babel import Babel, gettext as _, get_locale
 from database import create_connection # Module personnalisé pour la connexion à la base de données
+from functools import wraps
 import mysql.connector
 from mysql.connector import Error
 import torch
@@ -17,6 +18,7 @@ import cv2
 from torchvision import transforms
 from werkzeug.security import generate_password_hash, check_password_hash
 from model import build_unet # Modèle U-Net personnalisé
+from adapt_model import run_adaptation
 import time
 import traceback
 from typing import Union
@@ -28,6 +30,8 @@ from email.mime.text import MIMEText
 import json
 import sys
 import re
+import uuid
+import threading
 
 # Initialisation de l'application Flask
 app = Flask(__name__)
@@ -72,6 +76,11 @@ os.makedirs(CLASSIFICATION_DIR, exist_ok=True)
 # Configuration du système de logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+
+ADAPT_JOBS = {}
+ADAPT_JOBS_LOCK = threading.Lock()
+
+
 
 # ---------------------------------------------------------------
 # MODÈLES DEEP LEARNING
@@ -152,6 +161,11 @@ class EfficientNetClassifier(nn.Module):
             raise
 
 # ---------------------------
+
+
+
+
+
 # ---------------------------------------------------------------
 # GESTION DES REQUÊTES ET AUTHENTIFICATION
 # ---------------------------------------------------------------
@@ -164,6 +178,14 @@ def require_login():
     if request.endpoint not in allowed_routes and not session.get('logged_in'):
         return redirect(url_for('login'))
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('logged_in'):
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
 @app.route('/set-language/<lang>')
 def set_language(lang):
     if lang in LANGUAGES:
@@ -173,6 +195,143 @@ def set_language(lang):
 # ---------------------------------------------------------------
 # ROUTES D'AUTHENTIFICATION
 # ---------------------------------------------------------------
+
+
+@app.route('/adapt_model', methods=['POST'])
+@login_required
+def adapt_model():
+    dataset_zip  = request.files.get('dataset')
+    base_model_file = request.files.get('base_model_file')
+    task         = request.form.get('task', 'classification')
+    model_name   = request.form.get('model_name', 'adapted_model')
+    base_model   = request.form.get('base_model', '')
+    epochs       = request.form.get('epochs', 20)
+    lr           = request.form.get('lr', 0.001)
+    batch_size   = request.form.get('batch_size', 16)
+
+    if not dataset_zip:
+        return jsonify({'success': False, 'message': 'Aucun fichier recu'})
+
+    job_id = str(uuid.uuid4())
+    request_tmp_dir = os.path.join('tmp', 'adapt_requests', job_id)
+    os.makedirs(request_tmp_dir, exist_ok=True)
+
+    dataset_path = os.path.join(request_tmp_dir, 'dataset.zip')
+    dataset_zip.save(dataset_path)
+
+    base_model_path = None
+    if base_model_file and base_model_file.filename:
+        base_model_path = os.path.join(request_tmp_dir, base_model_file.filename)
+        base_model_file.save(base_model_path)
+
+    with ADAPT_JOBS_LOCK:
+        ADAPT_JOBS[job_id] = {
+            'done': False,
+            'success': None,
+            'message': 'Initialisation...',
+            'progress': 0,
+            'history': None,
+            'model_path': None,
+            'cancel_requested': False,
+            'canceled': False
+        }
+
+    logger.info(
+        "[adapt_model] queued job=%s model=%s task=%s epochs=%s lr=%s batch=%s dataset=%s",
+        job_id, model_name, task, epochs, lr, batch_size, dataset_zip.filename
+    )
+
+    def run_job():
+        try:
+            success, message, path, history = run_adaptation(
+                zip_path=dataset_path,
+                task=task,
+                model_name=model_name,
+                base_model_id=base_model,
+                epochs=epochs,
+                lr=lr,
+                batch_size=batch_size,
+                base_model_file=base_model_path,
+                job_id=job_id,
+                jobs=ADAPT_JOBS
+            )
+            with ADAPT_JOBS_LOCK:
+                if job_id in ADAPT_JOBS:
+                    ADAPT_JOBS[job_id]['done'] = True
+                    ADAPT_JOBS[job_id]['success'] = success
+                    ADAPT_JOBS[job_id]['message'] = message
+                    ADAPT_JOBS[job_id]['progress'] = 100
+                    ADAPT_JOBS[job_id]['history'] = history
+                    ADAPT_JOBS[job_id]['model_path'] = path
+                    ADAPT_JOBS[job_id]['canceled'] = bool(ADAPT_JOBS[job_id].get('cancel_requested'))
+        except Exception as e:
+            logger.exception("[adapt_model] job=%s crashed", job_id)
+            with ADAPT_JOBS_LOCK:
+                if job_id in ADAPT_JOBS:
+                    ADAPT_JOBS[job_id]['done'] = True
+                    ADAPT_JOBS[job_id]['success'] = False
+                    ADAPT_JOBS[job_id]['message'] = str(e)
+                    ADAPT_JOBS[job_id]['progress'] = 100
+                    ADAPT_JOBS[job_id]['history'] = None
+                    ADAPT_JOBS[job_id]['model_path'] = None
+        finally:
+            try:
+                if os.path.isdir(request_tmp_dir):
+                    import shutil
+                    shutil.rmtree(request_tmp_dir, ignore_errors=True)
+            except Exception:
+                logger.warning("[adapt_model] unable to cleanup temp dir for job=%s", job_id)
+
+    threading.Thread(target=run_job, daemon=True).start()
+    return jsonify({'success': True, 'job_id': job_id, 'message': 'Adaptation démarrée'})
+
+
+@app.route('/adapt_model_status/<job_id>', methods=['GET'])
+@login_required
+def adapt_model_status(job_id):
+    with ADAPT_JOBS_LOCK:
+        job = ADAPT_JOBS.get(job_id)
+
+    if not job:
+        return jsonify({'success': False, 'message': 'Job introuvable'}), 404
+
+    return jsonify({
+        'success': True,
+        'job_id': job_id,
+        'done': job.get('done', False),
+        'progress': job.get('progress', 0),
+        'message': job.get('message', ''),
+        'result_success': job.get('success'),
+        'cancel_requested': job.get('cancel_requested', False),
+        'canceled': job.get('canceled', False),
+        'history': job.get('history'),
+        'model_path': job.get('model_path')
+    })
+
+
+@app.route('/adapt_model_cancel/<job_id>', methods=['POST'])
+@login_required
+def adapt_model_cancel(job_id):
+    with ADAPT_JOBS_LOCK:
+        job = ADAPT_JOBS.get(job_id)
+        if not job:
+            return jsonify({'success': False, 'message': 'Job introuvable'}), 404
+
+        if job.get('done'):
+            return jsonify({
+                'success': True,
+                'already_done': True,
+                'message': job.get('message', 'Job deja termine')
+            })
+
+        job['cancel_requested'] = True
+        job['message'] = 'Arret demande...'
+        job['progress'] = max(int(job.get('progress') or 0), 99)
+
+    logger.info("[adapt_model] cancel requested for job=%s", job_id)
+    return jsonify({'success': True, 'message': 'Arret demande'})
+
+
 
 # Page d'accueil
 @app.route('/')
@@ -963,6 +1122,9 @@ def user_dashboard():
         user = cursor.fetchone()
         full_name = f"{user['first_name']} {user['last_name']}"
         
+        active_mode = request.args.get('mode', 'classification')
+        if active_mode not in ('classification', 'segmentation', 'adaptation'):
+            active_mode = 'classification'
         # Récupération des modèles disponibles
         cursor.execute("""
             SELECT id, model_name, model_type 
@@ -1899,8 +2061,9 @@ def uploaded_file(filename):
 
 @app.route('/get-models')
 def get_models():
-    category = request.args.get('category', 'eyes')
     process_type = request.args.get('type', 'segmentation')
+    connection = None
+    cursor = None
     
     try:
         connection = create_connection()
@@ -1914,13 +2077,67 @@ def get_models():
         """, (process_type,))
         
         models = cursor.fetchall()
-        return jsonify(models)
+        return jsonify({'models': models})
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
-        cursor.close()
-        connection.close()
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+
+@app.route('/download-adapted-model', methods=['GET'])
+@login_required
+def download_adapted_model():
+    path = request.args.get('path', '')
+    if not path:
+        return jsonify({'success': False, 'message': 'Missing path'}), 400
+
+    # Normaliser pour supporter '\' et '/'
+    normalized = str(path).replace('\\', '/').strip('/')
+    filename = normalized.split('/')[-1]
+
+    if not filename.lower().endswith(('.pth', '.pt')):
+        return jsonify({'success': False, 'message': 'Invalid file type'}), 400
+
+    models_dir = os.path.join(app.root_path, 'static', 'models')
+    file_path = os.path.join(models_dir, filename)
+    if not os.path.exists(file_path):
+        return jsonify({'success': False, 'message': 'File not found'}), 404
+
+    return send_from_directory(models_dir, filename, as_attachment=True)
+
+
+@app.route('/get-model-history', methods=['GET'])
+@login_required
+def get_model_history():
+    path = request.args.get('path', '')
+    if not path:
+        return jsonify({'success': False, 'message': 'Missing path'}), 400
+
+    normalized = str(path).replace('\\', '/').strip('/')
+    filename = normalized.split('/')[-1]
+
+    if not filename.lower().endswith(('.pth', '.pt')):
+        return jsonify({'success': False, 'message': 'Invalid file type'}), 400
+
+    models_dir = os.path.join(app.root_path, 'static', 'models')
+    file_path = os.path.join(models_dir, filename)
+    if not os.path.exists(file_path):
+        return jsonify({'success': False, 'message': 'File not found'}), 404
+
+    # Charge l'historique entraînement depuis le checkpoint
+    try:
+        ckpt = torch.load(file_path, map_location='cpu', weights_only=False)
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Load error: {str(e)}'}), 500
+
+    if isinstance(ckpt, dict) and 'history' in ckpt:
+        return jsonify({'success': True, 'history': ckpt.get('history')})
+
+    return jsonify({'success': False, 'message': 'No history found in this model'}), 404
 
 @app.route('/download-results', methods=['POST'])
 def download_results():
@@ -3014,4 +3231,4 @@ if __name__ == '__main__':
         os.makedirs(app.config['UPLOAD_FOLDER'])
     
     #  On ajoute host="0.0.0.0" pour le réseau
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)
