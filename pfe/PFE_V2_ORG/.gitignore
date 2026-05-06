@@ -3,9 +3,19 @@
 *.pt
 *.pt5
 *.sql
-# Ignore folders
-uploads/
-DRIVE_dataset/
-model_utils/
-images/
 
+# Ignore folders content but keep structure
+uploads/*
+!uploads/.gitkeep
+
+DRIVE_dataset/*
+!DRIVE_dataset/.gitkeep
+
+model_utils/*
+!model_utils/.gitkeep
+
+images/*
+!images/.gitkeep
+
+stored_models/*
+!stored_models/.gitkeep
