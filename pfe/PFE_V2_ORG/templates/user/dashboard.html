@@ -344,7 +344,8 @@
         // Initialisation de jsPDF
         const { jsPDF } = window.jspdf;
         
-        let currentMode = 'classification';
+        const _urlMode = new URLSearchParams(window.location.search).get('mode');
+        let currentMode = (_urlMode === 'segmentation' || _urlMode === 'classification') ? _urlMode : 'classification';
         let reportData = '';
         let selectedFile = null;
         let segmentationData = null;
@@ -508,9 +509,12 @@ function showMesResultats() {
             updateStepProgress();
         });
 
+        let selectedImageBase64 = null;
+
         function previewImage(file) {
             const reader = new FileReader();
             reader.onload = (e) => {
+                selectedImageBase64 = e.target.result;
                 document.getElementById('originalResult').src = e.target.result;
                 
                 // Mettre à jour les métriques d'entrée
@@ -727,7 +731,8 @@ function showMesResultats() {
                         window.classificationResults = {
                             ...data,
                             user_name: window.currentUser.fullName,
-                            patient_id: window.currentUser.cin
+                            patient_id: window.currentUser.cin,
+                            image_data_b64: selectedImageBase64
                         };
                         updateStepProgress(true);
                     } catch (error) {
@@ -773,13 +778,7 @@ function showMesResultats() {
         // Téléchargement du rapport (MODIFIER pour PDF)
         document.getElementById('downloadReportBtn').addEventListener('click', async function() {
     if (!window.classificationResults) {
-        alert("{{ _('Aucun résultat de classification disponible.') }}");
         return;
-    }
-    const imageUrl = document.getElementById('originalResult').src;
-    let image_data = null;
-    if (imageUrl.startsWith('data:')) {
-        image_data = imageUrl;
     }
     const cr = window.classificationResults;
     const classification_results = {
@@ -788,6 +787,11 @@ function showMesResultats() {
         prob_normal: cr.probabilities?.Normal !== undefined ? cr.probabilities.Normal / 100 : cr.prob_normal,
         prob_glaucoma: cr.probabilities?.Glaucome !== undefined ? cr.probabilities.Glaucome / 100 : cr.prob_glaucoma
     };
+    const imageUrl = document.getElementById('originalResult').src;
+    let image_data = cr.image_data_b64 || null;
+    if (!image_data && imageUrl.startsWith('data:')) {
+        image_data = imageUrl;
+    }
     const btn = document.getElementById('downloadReportBtn');
     const originalText = btn.innerHTML;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{ _("Génération du PDF...") }}';
@@ -813,11 +817,11 @@ function showMesResultats() {
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
-        } else {
+        } else if (response.status !== 400) {
             alert("{{ _('Erreur lors du téléchargement du PDF') }}");
         }
     } catch (error) {
-        alert("{{ _('Erreur lors du téléchargement du PDF') }}: " + error.message);
+        // ignore
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
@@ -832,13 +836,13 @@ function showMesResultats() {
     }
     const imageUrl = document.getElementById('originalResult').src;
     // Instead of sending a relative URL, send the data URL if it starts with "data:"
-    let image_data = null;
-    if (imageUrl.startsWith('data:')) {
+    const cr = window.classificationResults;
+    let image_data = cr.image_data_b64 || null;
+    if (!image_data && imageUrl.startsWith('data:')) {
         image_data = imageUrl;
     }
 
     // Map frontend keys to backend expected keys
-    const cr = window.classificationResults;
     const classification_results = {
         predicted_class_name: cr.predicted_class || cr.predicted_class_name,
         confidence: (typeof cr.confidence === 'number') ? cr.confidence / 100 : cr.confidence, // convert % to [0,1]
@@ -874,11 +878,11 @@ function showMesResultats() {
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
-        } else {
+        } else if (response.status !== 400) {
             alert("{{ _('Erreur lors du téléchargement du PDF') }}");
         }
     } catch (error) {
-        alert("{{ _('Erreur lors du téléchargement du PDF') }}: " + error.message);
+        // ignore
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
@@ -1040,6 +1044,24 @@ function showMesResultats() {
                 errorContainer.style.display = 'none';
             }, 5000);
         }
+
+        // Initialiser l'interface selon le mode dans l'URL au chargement
+        (function initFromUrl() {
+            if (currentMode === 'segmentation') {
+                // Mettre à jour la sidebar
+                document.querySelectorAll('.sidebar-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.type === 'segmentation');
+                });
+                // Afficher la section vérité terrain
+                const gtSection = document.getElementById('gtUploadSection');
+                if (gtSection) gtSection.style.display = 'block';
+                // Afficher le bon panneau résultat
+                const segRes = document.getElementById('segmentationResult');
+                const clsRes = document.getElementById('classificationResult');
+                if (segRes) segRes.style.display = 'block';
+                if (clsRes) clsRes.style.display = 'none';
+            }
+        })();
     </script>
     <!-- ══ VUE MES RÉSULTATS (Mohamed) ══ -->
     <div id="mesResultatsSection" style="display:none; flex-direction:row; width:100%; height:100vh; overflow:hidden; position:fixed; top:0; left:0; z-index:10;">

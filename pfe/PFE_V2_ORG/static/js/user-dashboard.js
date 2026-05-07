@@ -67,9 +67,6 @@ function initializeEventHandlers() {
     
     gtInput.addEventListener('change', handleGtSelect);
     
-    // Bouton de traitement
-    document.getElementById('processBtn').addEventListener('click', processImage);
-
     // Gestion des boutons de navigation
     document.querySelectorAll('#processingView .sidebar-btn[data-type]').forEach(btn => {
         btn.addEventListener('click', switchProcessType);
@@ -87,46 +84,7 @@ function initializeEventHandlers() {
         toggleGtBtn.addEventListener('click', toggleGtUpload);
     }
     
-    // Gestionnaire pour le bouton de téléchargement du rapport
-    const downloadBtn = document.getElementById('downloadReportBtn');
-    if (downloadBtn) {
-        downloadBtn.addEventListener('click', downloadReport);
-    }
-
-    // PDF download for classification report
-    document.getElementById('downloadResultsBtn').addEventListener('click', async function() {
-        const report = document.getElementById('reportContent').textContent;
-        const imageUrl = document.getElementById('originalResult').src;
-
-        // Get relative image path (if needed)
-        let relativeImageUrl = imageUrl;
-        if (imageUrl.startsWith(window.location.origin)) {
-            relativeImageUrl = imageUrl.replace(window.location.origin, '');
-        }
-
-        const response = await fetch('/download-classification-pdf', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                report: report,
-                image_url: relativeImageUrl
-            })
-        });
-
-        if (response.ok) {
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'rapport_classification.pdf';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        } else {
-            alert("Erreur lors du téléchargement du PDF");
-        }
-    });
+    // Les listeners PDF sont gérés dans dashboard.html
 }
 
 function toggleGtUpload() {

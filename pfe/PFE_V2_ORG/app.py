@@ -2769,6 +2769,8 @@ def remove_non_latin1(text):
 def download_classification_pdf():
     data = request.json
     classification_results = data.get('classification_results')
+    if not classification_results:
+        return jsonify({'error': 'Données de classification manquantes'}), 400
     image_data = data.get('image_data')
     image_url = data.get('image_url')
     user_cin = session.get('cin', 'Utilisateur inconnu')
@@ -2847,7 +2849,6 @@ def download_classification_pdf():
     if not filename or filename == "Image transmise":
         # Try to get from image_path if available
         filename = os.path.basename(image_path) if image_path else "Image inconnue"
-    from app import generate_classification_report, remove_non_latin1
     report_text = generate_classification_report(classification_results, filename, operator_name=full_name, patient_id=user_cin)
     report_text = remove_non_latin1(report_text)
     pdf.set_font("Arial", '', 11)
